@@ -1,0 +1,17 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <f:entry title="Cron" field="cron">
+    <f:textbox />
+  </f:entry>
+  <f:entry title="Bitbucket BasicAuth Username" field="username">
+    <f:textbox />
+  </f:entry>
+  <f:entry title="Bitbucket BasicAuth Password" field="password">
+    <f:password />
+  </f:entry>
+  <f:entry title="RepositoryOwner" field="repositoryOwner">
+    <f:textbox />
+  </f:entry>
+    <f:entry title="RespositoryName" field="repositoryName">
+    <f:textbox />
+  </f:entry>
+</j:jelly>

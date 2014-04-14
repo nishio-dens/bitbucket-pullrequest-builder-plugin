@@ -30,7 +30,7 @@ Creating a Job
   - */${sourceBranch}
 - Under Build Triggers, check Bitbucket Pull Request Builder
 - In Cron, enter crontab for this job.
-  - ex: */5 * * * *
+  - ex: * * * * *
 - In Bitbucket BasicAuth Username, write your bitbucket username like jenkins@densan-labs.net
 - In Bitbucket BasicAuth Password, write your password
 - Write RepositoryOwner

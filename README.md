@@ -64,3 +64,10 @@ Copyright
 =============================
 
 Copyright © 2014 S.nishio. 
+
+
+License
+=============================
+
+- BSD License
+- See COPYING file

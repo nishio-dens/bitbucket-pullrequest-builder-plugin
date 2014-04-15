@@ -11,7 +11,7 @@
   <f:entry title="RepositoryOwner" field="repositoryOwner">
     <f:textbox />
   </f:entry>
-    <f:entry title="RespositoryName" field="repositoryName">
+  <f:entry title="RespositoryName" field="repositoryName">
     <f:textbox />
   </f:entry>
 </j:jelly>

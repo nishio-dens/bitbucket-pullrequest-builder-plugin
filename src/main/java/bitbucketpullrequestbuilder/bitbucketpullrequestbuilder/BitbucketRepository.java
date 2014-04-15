@@ -89,6 +89,9 @@ public class BitbucketRepository {
     private boolean isBuildTarget(BitbucketPullRequestResponseValue pullRequest) {
         boolean shouldBuild = true;
         if (pullRequest.getState() != null && pullRequest.getState().equals("OPEN")) {
+            if (isSkipBuild(pullRequest.getTitle())) {
+                return false;
+            }
             BitbucketPullRequestResponseValueRepository destination = pullRequest.getDestination();
             String owner = destination.getRepository().getOwnerName();
             String repositoryName = destination.getRepository().getRepositoryName();
@@ -115,5 +118,18 @@ public class BitbucketRepository {
             }
         }
         return shouldBuild;
+    }
+
+    private boolean isSkipBuild(String pullRequestTitle) {
+        String skipPhrases = this.trigger.getCiSkipPhrases();
+        if (skipPhrases != null) {
+            String[] phrases = skipPhrases.split(",");
+            for(String phrase : phrases) {
+                if (pullRequestTitle.toLowerCase().contains(phrase.trim().toLowerCase())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

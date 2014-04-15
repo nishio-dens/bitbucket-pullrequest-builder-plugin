@@ -27,6 +27,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     private final String password;
     private final String repositoryOwner;
     private final String repositoryName;
+    private final String ciSkipPhrases;
     transient private BitbucketPullRequestsBuilder bitbucketPullRequestsBuilder;
 
     @Extension
@@ -39,7 +40,8 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             String username,
             String password,
             String repositoryOwner,
-            String repositoryName) throws ANTLRException {
+            String repositoryName,
+            String ciSkipPhrases) throws ANTLRException {
         super(cron);
         this.projectPath = projectPath;
         this.cron = cron;
@@ -47,6 +49,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         this.password = password;
         this.repositoryOwner = repositoryOwner;
         this.repositoryName = repositoryName;
+        this.ciSkipPhrases = ciSkipPhrases;
     }
 
     public String getProjectPath() {
@@ -71,6 +74,10 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     public String getRepositoryName() {
         return repositoryName;
+    }
+
+    public String getCiSkipPhrases() {
+        return ciSkipPhrases;
     }
 
     @Override

@@ -14,4 +14,7 @@
   <f:entry title="RespositoryName" field="repositoryName">
     <f:textbox />
   </f:entry>
+  <f:entry title="CI Skip Phrases" field="ciSkipPhrase">
+    <f:textbox />
+  </f:entry>
 </j:jelly>

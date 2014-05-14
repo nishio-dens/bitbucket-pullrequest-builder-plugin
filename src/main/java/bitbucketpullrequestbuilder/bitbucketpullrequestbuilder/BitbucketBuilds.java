@@ -56,10 +56,7 @@ public class BitbucketBuilds {
         else {
             buildUrl = rootUrl + build.getUrl();
         }
-        if(result == Result.SUCCESS) {
-            repository.postFinishedComment(cause.getPullRequestId(), cause.getCommitHash(), true, buildUrl);
-        } else if (result == Result.FAILURE || result == Result.UNSTABLE) {
-            repository.postFinishedComment(cause.getPullRequestId(), cause.getCommitHash(), false, buildUrl);
-        }
+        repository.deletePullRequestComment(cause.getPullRequestId(), cause.getBuildStartCommentId());
+        repository.postFinishedComment(cause.getPullRequestId(), cause.getCommitHash(), result == Result.SUCCESS, buildUrl);
     }
 }

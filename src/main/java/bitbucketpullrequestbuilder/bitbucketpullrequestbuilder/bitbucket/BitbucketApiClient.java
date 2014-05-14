@@ -4,6 +4,7 @@ import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 
@@ -52,14 +53,27 @@ public class BitbucketApiClient {
         return null;
     }
 
-    public void postPullRequestComment(String pullRequestId, String comment) {
+    public void deletePullRequestComment(String pullRequestId, String commentId) {
+        String path = V1_API_BASE_URL + this.owner + "/" + this.repositoryName + "/pullrequests/" + pullRequestId + "/comments/" + commentId;
+        //https://bitbucket.org/api/1.0/repositories/{accountname}/{repo_slug}/pullrequests/{pull_request_id}/comments/{comment_id}
+        deleteRequest(path);
+    }
+
+
+    public BitbucketPullRequestComment postPullRequestComment(String pullRequestId, String comment) {
         String path = V1_API_BASE_URL + this.owner + "/" + this.repositoryName + "/pullrequests/" + pullRequestId + "/comments";
         try {
             NameValuePair content = new NameValuePair("content", comment);
-            postRequest(path, new NameValuePair[]{ content });
+            String response = postRequest(path, new NameValuePair[]{ content });
+            return parseSingleCommentJson(response);
+
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private String getRequest(String path) {
@@ -79,21 +93,37 @@ public class BitbucketApiClient {
         return response;
     }
 
-    private void postRequest(String path, NameValuePair[] params) throws UnsupportedEncodingException {
+    public void deleteRequest(String path) {
+        HttpClient client = new HttpClient();
+        client.getState().setCredentials(AuthScope.ANY, credentials);
+        DeleteMethod httppost = new DeleteMethod(path);
+        client.getParams().setAuthenticationPreemptive(true);
+        String response = "";
+        try {
+            client.executeMethod(httppost);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String postRequest(String path, NameValuePair[] params) throws UnsupportedEncodingException {
         HttpClient client = new HttpClient();
         client.getState().setCredentials(AuthScope.ANY, credentials);
         PostMethod httppost = new PostMethod(path);
         httppost.setRequestBody(params);
         client.getParams().setAuthenticationPreemptive(true);
+        String response = "";
         try {
             client.executeMethod(httppost);
-            String response = httppost.getResponseBodyAsString();
+            response = httppost.getResponseBodyAsString();
             logger.info("API Request Response: " + response);
         } catch (HttpException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return response;
+
     }
 
     private BitbucketPullRequestResponse parsePullRequestJson(String response) throws IOException {
@@ -113,5 +143,13 @@ public class BitbucketApiClient {
         return parsedResponse;
     }
 
+    private BitbucketPullRequestComment parseSingleCommentJson(String response) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        BitbucketPullRequestComment parsedResponse;
+        parsedResponse = mapper.readValue(
+                response,
+                BitbucketPullRequestComment.class);
+        return parsedResponse;
+    }
 }
 

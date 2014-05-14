@@ -53,17 +53,16 @@ public class BitbucketRepository {
         return targetPullRequests;
     }
 
-    public void postBuildStartCommentTo(Collection<BitbucketPullRequestResponseValue> pullRequests) {
-        for(BitbucketPullRequestResponseValue pullRequest : pullRequests) {
+    public String postBuildStartCommentTo(BitbucketPullRequestResponseValue pullRequest) {
             String commit = pullRequest.getSource().getCommit().getHash();
             String comment = String.format(BUILD_START_MARKER, commit);
-
-            this.client.postPullRequestComment(pullRequest.getId(), comment);
-        }
+            BitbucketPullRequestComment commentResponse = this.client.postPullRequestComment(pullRequest.getId(), comment);
+            return commentResponse.getCommentId().toString();
     }
 
     public void addFutureBuildTasks(Collection<BitbucketPullRequestResponseValue> pullRequests) {
         for(BitbucketPullRequestResponseValue pullRequest : pullRequests) {
+            String commentId = postBuildStartCommentTo(pullRequest);
             BitbucketCause cause = new BitbucketCause(
                     pullRequest.getSource().getBranch().getName(),
                     pullRequest.getDestination().getBranch().getName(),
@@ -73,9 +72,14 @@ public class BitbucketRepository {
                     pullRequest.getDestination().getRepository().getOwnerName(),
                     pullRequest.getDestination().getRepository().getRepositoryName(),
                     pullRequest.getTitle(),
-                    pullRequest.getSource().getCommit().getHash());
+                    pullRequest.getSource().getCommit().getHash(),
+                    commentId);
             this.builder.getTrigger().startJob(cause);
         }
+    }
+
+    public void deletePullRequestComment(String pullRequestId, String commentId) {
+        this.client.deletePullRequestComment(pullRequestId,commentId);
     }
 
     public void postFinishedComment(String pullRequestId, String commit,  boolean success, String buildUrl) {

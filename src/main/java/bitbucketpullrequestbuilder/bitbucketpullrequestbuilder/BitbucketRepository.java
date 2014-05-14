@@ -16,12 +16,12 @@ import java.util.logging.Logger;
  */
 public class BitbucketRepository {
     private static final Logger logger = Logger.getLogger(BitbucketRepository.class.getName());
-    public static final String BUILD_START_MARKER = "[Build:%s Start]";
-    public static final String BUILD_FINISH_MARKER = "[Build:%s Finished]";
+    public static final String BUILD_START_MARKER = "[*BuildStarted*] %s";
+    public static final String BUILD_FINISH_MARKER = "[*BuildFinished*] %s \n\n **%s** - %s";
     public static final String BUILD_REQUEST_MARKER = "test this please";
 
-    public static final String BUILD_SUCCESS_COMMENT =  " Test PASSED.\n\t";
-    public static final String BUILD_FAILURE_COMMENT = " Test FAILED.\n\t";
+    public static final String BUILD_SUCCESS_COMMENT =  ":star:SUCCESS";
+    public static final String BUILD_FAILURE_COMMENT = ":x:FAILURE";
     private String projectPath;
     private BitbucketPullRequestsBuilder builder;
     private BitbucketBuildTrigger trigger;
@@ -57,7 +57,7 @@ public class BitbucketRepository {
         for(BitbucketPullRequestResponseValue pullRequest : pullRequests) {
             String commit = pullRequest.getSource().getCommit().getHash();
             String comment = String.format(BUILD_START_MARKER, commit);
-            comment += " Build Triggered. Waiting to hear about " + pullRequest.getSource().getRepository().getFullName();
+
             this.client.postPullRequestComment(pullRequest.getId(), comment);
         }
     }
@@ -79,14 +79,12 @@ public class BitbucketRepository {
     }
 
     public void postFinishedComment(String pullRequestId, String commit,  boolean success, String buildUrl) {
-
-        String comment = String.format(BUILD_FINISH_MARKER, commit);
-        if (success) {
-            comment += BUILD_SUCCESS_COMMENT;
-        } else {
-            comment += BUILD_FAILURE_COMMENT;
+        String message = BUILD_FAILURE_COMMENT;
+        if (success){
+            message = BUILD_SUCCESS_COMMENT;
         }
-        comment += buildUrl;
+        String comment = String.format(BUILD_FINISH_MARKER, commit, message, buildUrl);
+
         this.client.postPullRequestComment(pullRequestId, comment);
     }
 

@@ -4,9 +4,7 @@ import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Bitbuck
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BitbucketPullRequestComment;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BitbucketPullRequestResponseValue;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BitbucketPullRequestResponseValueRepository;
-import jenkins.model.Jenkins;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -18,9 +16,12 @@ import java.util.logging.Logger;
  */
 public class BitbucketRepository {
     private static final Logger logger = Logger.getLogger(BitbucketRepository.class.getName());
-    public static final String BUILD_START_MARKER = "[BuildStart]";
-    public static final String BUILD_FINISH_MARKER = "[BuildFinished]";
+    public static final String BUILD_START_MARKER = "[*BuildStarted*] %s";
+    public static final String BUILD_FINISH_MARKER = "[*BuildFinished*] %s \n\n **%s** - %s";
     public static final String BUILD_REQUEST_MARKER = "test this please";
+
+    public static final String BUILD_SUCCESS_COMMENT =  ":star:SUCCESS";
+    public static final String BUILD_FAILURE_COMMENT = ":x:FAILURE";
     private String projectPath;
     private BitbucketPullRequestsBuilder builder;
     private BitbucketBuildTrigger trigger;
@@ -54,8 +55,9 @@ public class BitbucketRepository {
 
     public void postBuildStartCommentTo(Collection<BitbucketPullRequestResponseValue> pullRequests) {
         for(BitbucketPullRequestResponseValue pullRequest : pullRequests) {
-            String comment = BUILD_START_MARKER;
-            comment += " Build Triggered. Waiting to hear about " + pullRequest.getSource().getRepository().getFullName();
+            String commit = pullRequest.getSource().getCommit().getHash();
+            String comment = String.format(BUILD_START_MARKER, commit);
+
             this.client.postPullRequestComment(pullRequest.getId(), comment);
         }
     }
@@ -70,19 +72,19 @@ public class BitbucketRepository {
                     pullRequest.getId(),
                     pullRequest.getDestination().getRepository().getOwnerName(),
                     pullRequest.getDestination().getRepository().getRepositoryName(),
-                    pullRequest.getTitle());
+                    pullRequest.getTitle(),
+                    pullRequest.getSource().getCommit().getHash());
             this.builder.getTrigger().startJob(cause);
         }
     }
 
-    public void postFinishedComment(String pullRequestId, boolean success, String buildUrl) {
-        String comment = BUILD_FINISH_MARKER;
-        if (success) {
-            comment += " Test PASSed. Refer to this link for build results.";
-        } else {
-            comment += " Test FAILed. Refer to this link for build results.";
+    public void postFinishedComment(String pullRequestId, String commit,  boolean success, String buildUrl) {
+        String message = BUILD_FAILURE_COMMENT;
+        if (success){
+            message = BUILD_SUCCESS_COMMENT;
         }
-        comment += buildUrl;
+        String comment = String.format(BUILD_FINISH_MARKER, commit, message, buildUrl);
+
         this.client.postPullRequestComment(pullRequestId, comment);
     }
 
@@ -92,11 +94,15 @@ public class BitbucketRepository {
             if (isSkipBuild(pullRequest.getTitle())) {
                 return false;
             }
+
+            String commit = pullRequest.getSource().getCommit().getHash();
             BitbucketPullRequestResponseValueRepository destination = pullRequest.getDestination();
             String owner = destination.getRepository().getOwnerName();
             String repositoryName = destination.getRepository().getRepositoryName();
             String id = pullRequest.getId();
             List<BitbucketPullRequestComment> comments = client.getPullRequestComments(owner, repositoryName, id);
+            String searchString = String.format(BUILD_START_MARKER, commit).toLowerCase();
+
             if (comments != null) {
                 Collections.sort(comments);
                 Collections.reverse(comments);
@@ -106,7 +112,7 @@ public class BitbucketRepository {
                         continue;
                     }
                     content = content.toLowerCase();
-                    if (content.contains(BUILD_START_MARKER.toLowerCase())) {
+                    if (content.contains(searchString)) {
                         shouldBuild = false;
                         break;
                     }

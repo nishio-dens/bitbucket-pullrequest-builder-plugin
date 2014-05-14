@@ -10,6 +10,7 @@ import org.codehaus.jackson.annotate.JsonProperty;
 public class BitbucketPullRequestResponseValueRepository {
     private BitbucketPullRequestResponseValueRepositoryRepository repository;
     private BitbucketPullRequestResponseValueRepositoryBranch branch;
+    private BitbucketPullRequestResponseValueRepositoryCommit commit;
 
     @JsonProperty("repository")
     public BitbucketPullRequestResponseValueRepositoryRepository getRepository() {
@@ -29,6 +30,16 @@ public class BitbucketPullRequestResponseValueRepository {
     @JsonProperty("branch")
     public void setBranch(BitbucketPullRequestResponseValueRepositoryBranch branch) {
         this.branch = branch;
+    }
+
+    @JsonProperty("commit")
+    public BitbucketPullRequestResponseValueRepositoryCommit getCommit() {
+        return commit;
+    }
+
+    @JsonProperty("commit")
+    public void setCommit(BitbucketPullRequestResponseValueRepositoryCommit commit) {
+        this.commit = commit;
     }
 }
 

@@ -122,7 +122,7 @@ public class BitbucketRepository {
 
     private boolean isSkipBuild(String pullRequestTitle) {
         String skipPhrases = this.trigger.getCiSkipPhrases();
-        if (skipPhrases != null) {
+        if (skipPhrases != null && !"".equals(skipPhrases)) {
             String[] phrases = skipPhrases.split(",");
             for(String phrase : phrases) {
                 if (pullRequestTitle.toLowerCase().contains(phrase.trim().toLowerCase())) {

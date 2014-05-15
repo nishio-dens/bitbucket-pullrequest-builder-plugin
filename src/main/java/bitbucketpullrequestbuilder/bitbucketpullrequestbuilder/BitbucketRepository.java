@@ -17,7 +17,8 @@ import java.util.logging.Logger;
 public class BitbucketRepository {
     private static final Logger logger = Logger.getLogger(BitbucketRepository.class.getName());
     public static final String BUILD_START_MARKER = "[*BuildStarted*] %s";
-    public static final String BUILD_FINISH_MARKER = "[*BuildFinished*] %s \n\n **%s** - %s";
+    public static final String BUILD_FINISH_MARKER = "[*BuildFinished*] %s";
+    public static final String BUILD_FINISH_SENTENCE = BUILD_FINISH_MARKER + " \n\n **%s** - %s";
     public static final String BUILD_REQUEST_MARKER = "test this please";
 
     public static final String BUILD_SUCCESS_COMMENT =  ":star:SUCCESS";
@@ -53,17 +54,16 @@ public class BitbucketRepository {
         return targetPullRequests;
     }
 
-    public void postBuildStartCommentTo(Collection<BitbucketPullRequestResponseValue> pullRequests) {
-        for(BitbucketPullRequestResponseValue pullRequest : pullRequests) {
+    public String postBuildStartCommentTo(BitbucketPullRequestResponseValue pullRequest) {
             String commit = pullRequest.getSource().getCommit().getHash();
             String comment = String.format(BUILD_START_MARKER, commit);
-
-            this.client.postPullRequestComment(pullRequest.getId(), comment);
-        }
+            BitbucketPullRequestComment commentResponse = this.client.postPullRequestComment(pullRequest.getId(), comment);
+            return commentResponse.getCommentId().toString();
     }
 
     public void addFutureBuildTasks(Collection<BitbucketPullRequestResponseValue> pullRequests) {
         for(BitbucketPullRequestResponseValue pullRequest : pullRequests) {
+            String commentId = postBuildStartCommentTo(pullRequest);
             BitbucketCause cause = new BitbucketCause(
                     pullRequest.getSource().getBranch().getName(),
                     pullRequest.getDestination().getBranch().getName(),
@@ -73,9 +73,14 @@ public class BitbucketRepository {
                     pullRequest.getDestination().getRepository().getOwnerName(),
                     pullRequest.getDestination().getRepository().getRepositoryName(),
                     pullRequest.getTitle(),
-                    pullRequest.getSource().getCommit().getHash());
+                    pullRequest.getSource().getCommit().getHash(),
+                    commentId);
             this.builder.getTrigger().startJob(cause);
         }
+    }
+
+    public void deletePullRequestComment(String pullRequestId, String commentId) {
+        this.client.deletePullRequestComment(pullRequestId,commentId);
     }
 
     public void postFinishedComment(String pullRequestId, String commit,  boolean success, String buildUrl) {
@@ -83,7 +88,7 @@ public class BitbucketRepository {
         if (success){
             message = BUILD_SUCCESS_COMMENT;
         }
-        String comment = String.format(BUILD_FINISH_MARKER, commit, message, buildUrl);
+        String comment = String.format(BUILD_FINISH_SENTENCE, commit, message, buildUrl);
 
         this.client.postPullRequestComment(pullRequestId, comment);
     }
@@ -101,7 +106,8 @@ public class BitbucketRepository {
             String repositoryName = destination.getRepository().getRepositoryName();
             String id = pullRequest.getId();
             List<BitbucketPullRequestComment> comments = client.getPullRequestComments(owner, repositoryName, id);
-            String searchString = String.format(BUILD_START_MARKER, commit).toLowerCase();
+            String searchStartMarker = String.format(BUILD_START_MARKER, commit).toLowerCase();
+            String searchFinishMarker = String.format(BUILD_FINISH_MARKER, commit).toLowerCase();
 
             if (comments != null) {
                 Collections.sort(comments);
@@ -112,7 +118,8 @@ public class BitbucketRepository {
                         continue;
                     }
                     content = content.toLowerCase();
-                    if (content.contains(searchString)) {
+                    if (content.contains(searchStartMarker) ||
+                        content.contains(searchFinishMarker)) {
                         shouldBuild = false;
                         break;
                     }

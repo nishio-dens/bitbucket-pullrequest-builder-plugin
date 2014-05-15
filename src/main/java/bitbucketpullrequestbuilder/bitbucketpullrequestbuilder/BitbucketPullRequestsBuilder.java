@@ -28,7 +28,6 @@ public class BitbucketPullRequestsBuilder {
         logger.info("Build Start.");
         this.repository.init();
         Collection<BitbucketPullRequestResponseValue> targetPullRequests = this.repository.getTargetPullRequests();
-        this.repository.postBuildStartCommentTo(targetPullRequests);
         this.repository.addFutureBuildTasks(targetPullRequests);
     }
 

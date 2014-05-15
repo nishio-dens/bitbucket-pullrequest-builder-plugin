@@ -15,6 +15,7 @@ public class BitbucketCause extends Cause {
     private final String destinationRepositoryName;
     private final String pullRequestTitle;
     private final String commitHash;
+    private final String buildStartCommentId;
     public static final String BITBUCKET_URL = "https://bitbucket.org/";
 
     public BitbucketCause(String sourceBranch,
@@ -25,7 +26,8 @@ public class BitbucketCause extends Cause {
                           String destinationRepositoryOwner,
                           String destinationRepositoryName,
                           String pullRequestTitle,
-                          String commitHash) {
+                          String commitHash,
+                          String buildStartCommentId) {
         this.sourceBranch = sourceBranch;
         this.targetBranch = targetBranch;
         this.repositoryOwner = repositoryOwner;
@@ -35,6 +37,7 @@ public class BitbucketCause extends Cause {
         this.destinationRepositoryName = destinationRepositoryName;
         this.pullRequestTitle = pullRequestTitle;
         this.commitHash = commitHash;
+        this.buildStartCommentId = buildStartCommentId;
     }
 
     public String getSourceBranch() {
@@ -70,6 +73,8 @@ public class BitbucketCause extends Cause {
     }
 
     public String getCommitHash() { return commitHash; }
+
+    public String getBuildStartCommentId() { return buildStartCommentId; }
 
     @Override
     public String getShortDescription() {

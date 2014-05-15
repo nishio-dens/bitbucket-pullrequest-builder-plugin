@@ -17,7 +17,8 @@ import java.util.logging.Logger;
 public class BitbucketRepository {
     private static final Logger logger = Logger.getLogger(BitbucketRepository.class.getName());
     public static final String BUILD_START_MARKER = "[*BuildStarted*] %s";
-    public static final String BUILD_FINISH_MARKER = "[*BuildFinished*] %s \n\n **%s** - %s";
+    public static final String BUILD_FINISH_MARKER = "[*BuildFinished*] %s";
+    public static final String BUILD_FINISH_SENTENCE = BUILD_FINISH_MARKER + " \n\n **%s** - %s";
     public static final String BUILD_REQUEST_MARKER = "test this please";
 
     public static final String BUILD_SUCCESS_COMMENT =  ":star:SUCCESS";
@@ -87,7 +88,7 @@ public class BitbucketRepository {
         if (success){
             message = BUILD_SUCCESS_COMMENT;
         }
-        String comment = String.format(BUILD_FINISH_MARKER, commit, message, buildUrl);
+        String comment = String.format(BUILD_FINISH_SENTENCE, commit, message, buildUrl);
 
         this.client.postPullRequestComment(pullRequestId, comment);
     }
@@ -105,7 +106,8 @@ public class BitbucketRepository {
             String repositoryName = destination.getRepository().getRepositoryName();
             String id = pullRequest.getId();
             List<BitbucketPullRequestComment> comments = client.getPullRequestComments(owner, repositoryName, id);
-            String searchString = String.format(BUILD_START_MARKER, commit).toLowerCase();
+            String searchStartMarker = String.format(BUILD_START_MARKER, commit).toLowerCase();
+            String searchFinishMarker = String.format(BUILD_FINISH_MARKER, commit).toLowerCase();
 
             if (comments != null) {
                 Collections.sort(comments);
@@ -116,7 +118,8 @@ public class BitbucketRepository {
                         continue;
                     }
                     content = content.toLowerCase();
-                    if (content.contains(searchString)) {
+                    if (content.contains(searchStartMarker) ||
+                        content.contains(searchFinishMarker)) {
                         shouldBuild = false;
                         break;
                     }

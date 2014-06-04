@@ -17,4 +17,7 @@
   <f:entry title="CI Skip Phrases" field="ciSkipPhrases">
     <f:textbox />
   </f:entry>
+  <f:entry title="Comment phrase to re-trigger build" field="triggerPhrase">
+    <f:textbox />
+  </f:entry>
 </j:jelly>

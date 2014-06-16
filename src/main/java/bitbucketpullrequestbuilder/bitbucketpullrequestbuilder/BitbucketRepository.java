@@ -19,10 +19,11 @@ public class BitbucketRepository {
     public static final String BUILD_START_MARKER = "[*BuildStarted*] %s";
     public static final String BUILD_FINISH_MARKER = "[*BuildFinished*] %s";
     public static final String BUILD_FINISH_SENTENCE = BUILD_FINISH_MARKER + " \n\n **%s** - %s";
-    public static final String BUILD_REQUEST_MARKER = "test this please";
 
     public static final String BUILD_SUCCESS_COMMENT =  ":star:SUCCESS";
     public static final String BUILD_FAILURE_COMMENT = ":x:FAILURE";
+    public String BUILD_REQUEST_MARKER = "test this please";
+
     private String projectPath;
     private BitbucketPullRequestsBuilder builder;
     private BitbucketBuildTrigger trigger;
@@ -40,6 +41,7 @@ public class BitbucketRepository {
                 trigger.getPassword(),
                 trigger.getRepositoryOwner(),
                 trigger.getRepositoryName());
+        BUILD_REQUEST_MARKER = this.trigger.getTriggerPhrase();
     }
 
     public Collection<BitbucketPullRequestResponseValue> getTargetPullRequests() {

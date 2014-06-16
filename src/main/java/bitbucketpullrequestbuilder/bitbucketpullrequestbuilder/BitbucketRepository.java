@@ -22,7 +22,7 @@ public class BitbucketRepository {
 
     public static final String BUILD_SUCCESS_COMMENT =  ":star:SUCCESS";
     public static final String BUILD_FAILURE_COMMENT = ":x:FAILURE";
-    public String BUILD_REQUEST_MARKER = " ";
+    public String BUILD_REQUEST_MARKER = "test this please";
 
     private String projectPath;
     private BitbucketPullRequestsBuilder builder;

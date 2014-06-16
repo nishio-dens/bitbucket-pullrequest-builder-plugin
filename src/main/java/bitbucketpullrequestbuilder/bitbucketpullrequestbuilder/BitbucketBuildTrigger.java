@@ -84,9 +84,6 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public String getTriggerPhrase() {
-        if (triggerPhrase.length() < 5) {
-            return "test this please";
-        }
         return triggerPhrase;
     }
 

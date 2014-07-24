@@ -36,26 +36,26 @@
   </repositories>
 
   <dependencies>
-      <dependency>
-          <groupId>org.apache.maven.wagon</groupId>
-          <artifactId>wagon-http</artifactId>
-          <version>2.4</version>
-      </dependency>
-      <dependency>
-          <groupId>commons-httpclient</groupId>
-          <artifactId>commons-httpclient</artifactId>
-          <version>3.1</version>
-      </dependency>
-      <dependency>
-          <groupId>commons-codec</groupId>
-          <artifactId>commons-codec</artifactId>
-          <version>1.9</version>
-      </dependency>
-      <dependency>
-          <groupId>org.codehaus.jackson</groupId>
-          <artifactId>jackson-jaxrs</artifactId>
-          <version>1.9.13</version>
-      </dependency>
+    <dependency>
+      <groupId>org.apache.maven.wagon</groupId>
+      <artifactId>wagon-http</artifactId>
+      <version>2.4</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-httpclient</groupId>
+      <artifactId>commons-httpclient</artifactId>
+      <version>3.1</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>1.9</version>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.jackson</groupId>
+      <artifactId>jackson-jaxrs</artifactId>
+      <version>1.9.13</version>
+    </dependency>
     <dependency>
       <groupId>org.eclipse.hudson.plugins</groupId>
       <artifactId>git</artifactId>

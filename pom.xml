@@ -56,6 +56,11 @@
           <artifactId>jackson-jaxrs</artifactId>
           <version>1.9.13</version>
       </dependency>
+    <dependency>
+      <groupId>org.eclipse.hudson.plugins</groupId>
+      <artifactId>git</artifactId>
+      <version>3.0.1</version>
+    </dependency>
   </dependencies>
 
   <pluginRepositories>

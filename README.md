@@ -37,6 +37,19 @@ Creating a Job
 - Write RepositoryName
 - Save to preserve your changes
 
+Merge the Pull Request's Source Branch into the Target Branch Before Building
+==============================================================================
+You may want Jenkins to attempt to merge your PR before doing the build -- this way it will find conflicts for you automatically.
+- Follow the steps above in "Creating a Job"
+- In the "Source Code Management" > "Git" > "Additional Behaviors" section, click "Add" > "Merge Before Building"
+- In "Name of Repository" put "origin" (or, if not using default name, use your remote repository's name. Note: unlike in the main part of the Git Repository config, you cannot leave this item blank for "default".)
+- In "Branch to merge to" put "${targetBranch}" 
+- Note that as long as you don't push these changes to your remote repository, the merge only happens in your local repository.
+
+
+If you are merging into your target branch, you might want Jenkins to do a new build of the Pull Request when the target branch changes.
+- There is a checkbox that says, "Rebuild if destination branch changes?" which enables this check.
+
 
 Rerun test builds
 ====================

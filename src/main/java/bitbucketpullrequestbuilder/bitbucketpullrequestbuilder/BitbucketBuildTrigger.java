@@ -28,6 +28,8 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     private final String repositoryOwner;
     private final String repositoryName;
     private final String ciSkipPhrases;
+    private final boolean checkDestinationCommit;
+    
     transient private BitbucketPullRequestsBuilder bitbucketPullRequestsBuilder;
 
     @Extension
@@ -41,7 +43,9 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             String password,
             String repositoryOwner,
             String repositoryName,
-            String ciSkipPhrases) throws ANTLRException {
+            String ciSkipPhrases,
+            boolean checkDestinationCommit
+            ) throws ANTLRException {
         super(cron);
         this.projectPath = projectPath;
         this.cron = cron;
@@ -50,6 +54,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         this.repositoryOwner = repositoryOwner;
         this.repositoryName = repositoryName;
         this.ciSkipPhrases = ciSkipPhrases;
+        this.checkDestinationCommit = checkDestinationCommit;
     }
 
     public String getProjectPath() {
@@ -78,6 +83,10 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     public String getCiSkipPhrases() {
         return ciSkipPhrases;
+    }
+    
+    public boolean getCheckDestinationCommit() {
+    	return checkDestinationCommit;
     }
 
     @Override
@@ -108,7 +117,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         values.put("sourceBranch", new StringParameterValue("sourceBranch", cause.getSourceBranch()));
         values.put("targetBranch", new StringParameterValue("targetBranch", cause.getTargetBranch()));
         values.put("repositoryOwner", new StringParameterValue("repositoryOwner", cause.getRepositoryOwner()));
-        values.put("repositonyName", new StringParameterValue("repositoryName", cause.getRepositoryName()));
+        values.put("repositoryName", new StringParameterValue("repositoryName", cause.getRepositoryName()));
         values.put("pullRequestId", new StringParameterValue("pullRequestId", cause.getPullRequestId()));
         values.put("destinationRepositoryOwner", new StringParameterValue("destinationRepositoryOwner", cause.getDestinationRepositoryOwner()));
         values.put("destinationRepositoryName", new StringParameterValue("destinationRepositoryName", cause.getDestinationRepositoryName()));

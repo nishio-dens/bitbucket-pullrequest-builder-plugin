@@ -18,11 +18,11 @@ import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Bitbuck
  */
 public class BitbucketRepository {
     private static final Logger logger = Logger.getLogger(BitbucketRepository.class.getName());
-    public static final String BUILD_START_MARKER = "[*BuildStarted*] %s into %s";
-    public static final String BUILD_FINISH_MARKER = "[*BuildFinished*] %s into %s";
+    public static final String BUILD_START_MARKER = "[*BuildStarted* **%s**] %s into %s";
+    public static final String BUILD_FINISH_MARKER = "[*BuildFinished* **%s**] %s into %s";
 
-    public static final String BUILD_START_REGEX = "\\[\\*BuildStarted\\*\\] ([0-9a-fA-F]+) into ([0-9a-fA-F]+)";
-    public static final String BUILD_FINISH_REGEX = "\\[\\*BuildFinished\\*\\] ([0-9a-fA-F]+) into ([0-9a-fA-F]+)";
+    public static final String BUILD_START_REGEX = "\\[\\*BuildStarted\\* \\*\\*%s\\*\\*\\] ([0-9a-fA-F]+) into ([0-9a-fA-F]+)";
+    public static final String BUILD_FINISH_REGEX = "\\[\\*BuildFinished\\* \\*\\*%s\\*\\*\\] ([0-9a-fA-F]+) into ([0-9a-fA-F]+)";
 
     public static final String BUILD_FINISH_SENTENCE = BUILD_FINISH_MARKER + " \n\n **%s** - %s";
     public static final String BUILD_REQUEST_MARKER = "test this please";
@@ -63,7 +63,7 @@ public class BitbucketRepository {
     public String postBuildStartCommentTo(BitbucketPullRequestResponseValue pullRequest) {
             String sourceCommit = pullRequest.getSource().getCommit().getHash();
             String destinationCommit = pullRequest.getDestination().getCommit().getHash();
-            String comment = String.format(BUILD_START_MARKER, sourceCommit, destinationCommit);
+            String comment = String.format(BUILD_START_MARKER, builder.getProject().getDisplayName(), sourceCommit, destinationCommit);
             BitbucketPullRequestComment commentResponse = this.client.postPullRequestComment(pullRequest.getId(), comment);
             return commentResponse.getCommentId().toString();
     }
@@ -96,7 +96,7 @@ public class BitbucketRepository {
         if (success){
             message = BUILD_SUCCESS_COMMENT;
         }
-        String comment = String.format(BUILD_FINISH_SENTENCE, sourceCommit, destinationCommit, message, buildUrl);
+        String comment = String.format(BUILD_FINISH_SENTENCE, builder.getProject().getDisplayName(), sourceCommit, destinationCommit, message, buildUrl);
 
         this.client.postPullRequestComment(pullRequestId, comment);
     }
@@ -129,8 +129,10 @@ public class BitbucketRepository {
                     }
 
                     //These will match any start or finish message -- need to check commits
-                    Matcher startMatcher = Pattern.compile(BUILD_START_REGEX, Pattern.CASE_INSENSITIVE).matcher(content);
-                    Matcher finishMatcher = Pattern.compile(BUILD_FINISH_REGEX, Pattern.CASE_INSENSITIVE).matcher(content);
+                    String project_build_start = String.format(BUILD_START_REGEX, builder.getProject().getDisplayName());
+                    String project_build_finished = String.format(BUILD_FINISH_REGEX, builder.getProject().getDisplayName());
+                    Matcher startMatcher = Pattern.compile(project_build_start, Pattern.CASE_INSENSITIVE).matcher(content);
+                    Matcher finishMatcher = Pattern.compile(project_build_finished, Pattern.CASE_INSENSITIVE).matcher(content);
 
                     if (startMatcher.find() ||
                         finishMatcher.find()) {

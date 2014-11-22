@@ -48,15 +48,8 @@ public class BitbucketBuilds {
             return;
         }
         Result result = build.getResult();
-        String rootUrl = Jenkins.getInstance().getRootUrl();
-        String buildUrl = "";
-        if (rootUrl == null) {
-            buildUrl = " PLEASE SET JENKINS ROOT URL FROM GLOBAL CONFIGURATION " + build.getUrl();
-        }
-        else {
-            buildUrl = rootUrl + build.getUrl();
-        }
+
         repository.deletePullRequestComment(cause.getPullRequestId(), cause.getBuildStartCommentId());
-        repository.postFinishedComment(cause.getPullRequestId(), cause.getSourceCommitHash(), cause.getDestinationCommitHash(), result == Result.SUCCESS, buildUrl);
+        repository.postFinishedComment(cause.getPullRequestId(), cause.getSourceCommitHash(), cause.getDestinationCommitHash(), result == Result.SUCCESS, build);
     }
 }

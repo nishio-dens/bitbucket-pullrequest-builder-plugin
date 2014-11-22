@@ -4,10 +4,21 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
+
+import hudson.Util;
+import hudson.model.AbstractBuild;
+import hudson.util.LogTaskListener;
+
+import jenkins.model.Jenkins;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BitbucketApiClient;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BitbucketPullRequestComment;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BitbucketPullRequestResponseValue;
@@ -24,7 +35,7 @@ public class BitbucketRepository {
     public static final String BUILD_START_REGEX = "\\[\\*BuildStarted\\*\\] ([0-9a-fA-F]+) into ([0-9a-fA-F]+)";
     public static final String BUILD_FINISH_REGEX = "\\[\\*BuildFinished\\*\\] ([0-9a-fA-F]+) into ([0-9a-fA-F]+)";
 
-    public static final String BUILD_FINISH_SENTENCE = BUILD_FINISH_MARKER + " \n\n **%s** - %s";
+    public static final String BUILD_FINISH_SENTENCE = BUILD_FINISH_MARKER + " \n\n**%s**\n\n%s\n\n%s";
     public static final String BUILD_REQUEST_MARKER = "test this please";
 
     public static final String BUILD_SUCCESS_COMMENT =  ":star:SUCCESS";
@@ -91,12 +102,45 @@ public class BitbucketRepository {
         this.client.deletePullRequestComment(pullRequestId,commentId);
     }
 
-    public void postFinishedComment(String pullRequestId, String sourceCommit,  String destinationCommit, boolean success, String buildUrl) {
-        String message = BUILD_FAILURE_COMMENT;
-        if (success){
-            message = BUILD_SUCCESS_COMMENT;
+    public void postFinishedComment(String pullRequestId, String sourceCommit,  String destinationCommit, boolean success, AbstractBuild build) {
+        String rootUrl = Jenkins.getInstance().getRootUrl();
+        String commentFilePath = this.trigger.getCommentFilePath();
+        String buildUrl = "";
+        String buildStatus = BUILD_FAILURE_COMMENT;
+
+        if (rootUrl == null) {
+            buildUrl = " PLEASE SET JENKINS ROOT URL FROM GLOBAL CONFIGURATION " + build.getUrl();
         }
-        String comment = String.format(BUILD_FINISH_SENTENCE, sourceCommit, destinationCommit, message, buildUrl);
+        else {
+            buildUrl = rootUrl + build.getUrl();
+        }
+
+        StringBuilder message = new StringBuilder();
+
+        if (success){
+            buildStatus = BUILD_SUCCESS_COMMENT;
+        }
+
+        if (commentFilePath != null && commentFilePath != "") {
+            Map<String, String> scriptPathExecutionEnvVars = new HashMap<String, String>();
+                try {
+                    scriptPathExecutionEnvVars.putAll(build.getCharacteristicEnvVars());
+                    scriptPathExecutionEnvVars.putAll(build.getBuildVariables());
+                    scriptPathExecutionEnvVars.putAll(build.getEnvironment(new LogTaskListener(logger, Level.INFO)));
+
+                    String scriptFilePathResolved = Util.replaceMacro(commentFilePath, scriptPathExecutionEnvVars);
+
+                    String content = FileUtils.readFileToString(new File(scriptFilePathResolved));
+                    message.append("# Build comment file #\n\n");
+                    message.append(content);
+                    message.append("\n");
+                 } catch (Exception e) {
+                     message.append("# Couldn't read commit file #\n\n");
+                     logger.log(Level.SEVERE, "Couldn't read comment file: ", e);
+                 }
+        }
+
+        String comment = String.format(BUILD_FINISH_SENTENCE, sourceCommit, destinationCommit, buildStatus, message, buildUrl);
 
         this.client.postPullRequestComment(pullRequestId, comment);
     }

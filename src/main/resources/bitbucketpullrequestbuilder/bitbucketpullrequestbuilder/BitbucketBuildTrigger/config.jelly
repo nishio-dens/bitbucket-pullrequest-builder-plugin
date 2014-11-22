@@ -17,6 +17,9 @@
   <f:entry title="CI Skip Phrases" field="ciSkipPhrases">
     <f:textbox />
   </f:entry>
+  <f:entry title="Comment file path" field="commentFilePath">
+    <f:textbox />
+  </f:entry>
   <f:entry title="Rebuild if destination branch changes?" field="checkDestinationCommit">
     <f:checkbox />
   </f:entry>

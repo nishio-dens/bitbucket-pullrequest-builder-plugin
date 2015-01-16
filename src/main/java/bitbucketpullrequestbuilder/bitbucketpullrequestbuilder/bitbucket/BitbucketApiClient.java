@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import jenkins.model.Jenkins;
+import hudson.ProxyConfiguration;
+
 /**
  * Created by nishio
  */
@@ -76,8 +79,28 @@ public class BitbucketApiClient {
         return null;
     }
 
-    private String getRequest(String path) {
+    private HttpClient getHttpClient() {
         HttpClient client = new HttpClient();
+        if (Jenkins.getInstance() != null) {
+            ProxyConfiguration proxy = Jenkins.getInstance().proxy;
+            logger.info("Jenins proxy: " + proxy.name + ":" + proxy.port);
+            if (proxy != null) {
+                client.getHostConfiguration().setProxy(proxy.name, proxy.port);
+                String username = proxy.getUserName();
+                String password = proxy.getPassword();
+                // Consider it to be passed if username specified. Sufficient?
+                if (username != null && !"".equals(username.trim())) {
+                    logger.info("Using proxy authentication (user=" + username + ")");
+                    client.getState().setProxyCredentials(AuthScope.ANY,
+                        new UsernamePasswordCredentials(username, password));
+                }
+            }
+        }
+        return client;
+    }
+
+    private String getRequest(String path) {
+        HttpClient client = getHttpClient();
         client.getState().setCredentials(AuthScope.ANY, credentials);
         GetMethod httpget = new GetMethod(path);
         client.getParams().setAuthenticationPreemptive(true);
@@ -94,7 +117,7 @@ public class BitbucketApiClient {
     }
 
     public void deleteRequest(String path) {
-        HttpClient client = new HttpClient();
+        HttpClient client = getHttpClient();
         client.getState().setCredentials(AuthScope.ANY, credentials);
         DeleteMethod httppost = new DeleteMethod(path);
         client.getParams().setAuthenticationPreemptive(true);
@@ -107,7 +130,7 @@ public class BitbucketApiClient {
     }
 
     private String postRequest(String path, NameValuePair[] params) throws UnsupportedEncodingException {
-        HttpClient client = new HttpClient();
+        HttpClient client = getHttpClient();
         client.getState().setCredentials(AuthScope.ANY, credentials);
         PostMethod httppost = new PostMethod(path);
         httppost.setRequestBody(params);

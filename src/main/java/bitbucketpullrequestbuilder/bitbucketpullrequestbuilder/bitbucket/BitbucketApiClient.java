@@ -10,6 +10,7 @@ import org.codehaus.jackson.type.TypeReference;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,7 +43,7 @@ public class BitbucketApiClient {
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
         }
-        return null;
+        return Collections.EMPTY_LIST;
     }
 
     public List<BitbucketPullRequestComment> getPullRequestComments(String commentOwnerName, String commentRepositoryName, String pullRequestId) {
@@ -53,7 +54,7 @@ public class BitbucketApiClient {
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
         }
-        return null;
+        return Collections.EMPTY_LIST;
     }
 
     public void deletePullRequestComment(String pullRequestId, String commentId) {

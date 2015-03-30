@@ -80,6 +80,22 @@ public class BitbucketApiClient {
         return null;
     }
 
+    public void deletePullRequestApproval(String pullRequestId) {
+        String path = V2_API_BASE_URL + this.owner + "/" + this.repositoryName + "/pullrequests/" + pullRequestId + "/approve";
+        deleteRequest(path);
+    }
+
+    public BitbucketPullRequestApproval postPullRequestApproval(String pullRequestId) {
+        String path = V2_API_BASE_URL + this.owner + "/" + this.repositoryName + "/pullrequests/" + pullRequestId + "/approve";
+        try {
+            String response = postRequest(path, new NameValuePair[]{});
+            return parseApprovalJson(response);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     private HttpClient getHttpClient() {
         HttpClient client = new HttpClient();
         if (Jenkins.getInstance() != null) {
@@ -173,6 +189,15 @@ public class BitbucketApiClient {
         parsedResponse = mapper.readValue(
                 response,
                 BitbucketPullRequestComment.class);
+        return parsedResponse;
+    }
+
+    private BitbucketPullRequestApproval parseApprovalJson(String response) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        BitbucketPullRequestApproval parsedResponse;
+        parsedResponse = mapper.readValue(
+                response,
+                BitbucketPullRequestApproval.class);
         return parsedResponse;
     }
 }

@@ -38,4 +38,7 @@
   <f:entry title="Approve if build success?" field="approveIfSuccess">
     <f:checkbox />
   </f:entry>
+  <f:entry title="Comment phrase to trigger build" field="commentTrigger">
+    <f:textbox />
+  </f:entry>
 </j:jelly>

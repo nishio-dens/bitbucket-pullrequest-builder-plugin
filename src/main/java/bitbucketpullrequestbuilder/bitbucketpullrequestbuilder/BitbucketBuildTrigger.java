@@ -28,6 +28,11 @@ import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
  * Created by nishio
  */
 public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
+    /**
+    * Default value for {@link #getCommentTrigger()}.
+    */
+    public static final String DEFAULT_COMMENT_TRIGGER = "test this please";
+
     private static final Logger logger = Logger.getLogger(BitbucketBuildTrigger.class.getName());
     private final String projectPath;
     private final String cron;
@@ -43,44 +48,71 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     private final String ciSkipPhrases;
     private final boolean checkDestinationCommit;
     private final boolean approveIfSuccess;
+    private final String commentTrigger;
 
     transient private BitbucketPullRequestsBuilder bitbucketPullRequestsBuilder;
 
     @Extension
-    public static final BitbucketBuildTriggerDescriptor descriptor = new BitbucketBuildTriggerDescriptor();   
+    public static final BitbucketBuildTriggerDescriptor descriptor = new BitbucketBuildTriggerDescriptor();
 
+    /**
+     * Sets {@link #getCommentTrigger()} to {@link #DEFAULT_COMMENT_TRIGGER}.
+     */
     @DataBoundConstructor
     public BitbucketBuildTrigger(
-            String projectPath,
-            String cron,
-            String credentialsId,
-            String username,
-            String password,
-            String repositoryOwner,
-            String repositoryName,
-            String branchesFilter,
-            boolean branchesFilterBySCMIncludes,
-            String ciKey,
-            String ciName,
-            String ciSkipPhrases,
-            boolean checkDestinationCommit,
-            boolean approveIfSuccess
-            ) throws ANTLRException {
-        super(cron);
-        this.projectPath = projectPath;
-        this.cron = cron;
-        this.credentialsId = credentialsId;
-        this.username = username;
-        this.password = password;
-        this.repositoryOwner = repositoryOwner;
-        this.repositoryName = repositoryName;
-        this.branchesFilter = branchesFilter;
-        this.branchesFilterBySCMIncludes = branchesFilterBySCMIncludes;
-        this.ciKey = ciKey;
-        this.ciName = ciName;
-        this.ciSkipPhrases = ciSkipPhrases;
-        this.checkDestinationCommit = checkDestinationCommit;
-        this.approveIfSuccess = approveIfSuccess;
+        String projectPath,
+        String cron,
+        String credentialsId,
+        String username,
+        String password,
+        String repositoryOwner,
+        String repositoryName,
+        String branchesFilter,
+        boolean branchesFilterBySCMIncludes,
+        String ciKey,
+        String ciName,
+        String ciSkipPhrases,
+        boolean checkDestinationCommit,
+        boolean approveIfSuccess
+    ) throws ANTLRException {
+      this(projectPath, cron, credentialsId, username, password, repositoryOwner, repositoryName,
+          branchesFilter, branchesFilterBySCMIncludes, ciKey, ciName, ciSkipPhrases,
+          checkDestinationCommit, approveIfSuccess, DEFAULT_COMMENT_TRIGGER);
+    }
+    @DataBoundConstructor
+    public BitbucketBuildTrigger(
+        String projectPath,
+        String cron,
+        String credentialsId,
+        String username,
+        String password,
+        String repositoryOwner,
+        String repositoryName,
+        String branchesFilter,
+        boolean branchesFilterBySCMIncludes,
+        String ciKey,
+        String ciName,
+        String ciSkipPhrases,
+        boolean checkDestinationCommit,
+        boolean approveIfSuccess,
+        String commentTrigger
+    ) throws ANTLRException {
+      super(cron);
+      this.projectPath = projectPath;
+      this.cron = cron;
+      this.credentialsId = credentialsId;
+      this.username = username;
+      this.password = password;
+      this.repositoryOwner = repositoryOwner;
+      this.repositoryName = repositoryName;
+      this.branchesFilter = branchesFilter;
+      this.branchesFilterBySCMIncludes = branchesFilterBySCMIncludes;
+      this.ciKey = ciKey;
+      this.ciName = ciName;
+      this.ciSkipPhrases = ciSkipPhrases;
+      this.checkDestinationCommit = checkDestinationCommit;
+      this.approveIfSuccess = approveIfSuccess;
+      this.commentTrigger = commentTrigger;
     }
 
     public String getProjectPath() {
@@ -114,7 +146,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     public String getBranchesFilter() {
         return branchesFilter;
     }
-    
+
     public boolean getBranchesFilterBySCMIncludes() {
       return branchesFilterBySCMIncludes;
     }
@@ -136,7 +168,13 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public boolean getApproveIfSuccess() {
-        return approveIfSuccess;
+      return approveIfSuccess;
+    }
+    /**
+     * @return a phrase that when entered in a comment will trigger a new build
+     */
+    public String getCommentTrigger() {
+      return commentTrigger;
     }
 
     @Override

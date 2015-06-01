@@ -71,6 +71,9 @@ public class BitbucketRepository {
     public void addFutureBuildTasks(Collection<BitbucketPullRequestResponseValue> pullRequests) {
         for(BitbucketPullRequestResponseValue pullRequest : pullRequests) {
             String commentId = postBuildStartCommentTo(pullRequest);
+            if ( this.trigger.getApproveIfSuccess() ) {
+                deletePullRequestApproval(pullRequest.getId());
+            }
             BitbucketCause cause = new BitbucketCause(
                     pullRequest.getSource().getBranch().getName(),
                     pullRequest.getDestination().getBranch().getName(),
@@ -99,6 +102,14 @@ public class BitbucketRepository {
         String comment = String.format(BUILD_FINISH_SENTENCE, builder.getProject().getDisplayName(), sourceCommit, destinationCommit, message, buildUrl);
 
         this.client.postPullRequestComment(pullRequestId, comment);
+    }
+
+    public void deletePullRequestApproval(String pullRequestId) {
+        this.client.deletePullRequestApproval(pullRequestId);
+    }
+
+    public void postPullRequestApproval(String pullRequestId) {
+        this.client.postPullRequestApproval(pullRequestId);
     }
 
     private boolean isBuildTarget(BitbucketPullRequestResponseValue pullRequest) {

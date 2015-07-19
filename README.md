@@ -10,14 +10,6 @@ Prerequisites
 - Jenkins 1.509.4 or higher.
 - https://wiki.jenkins-ci.org/display/JENKINS/Git+Plugin
 
-Installation
-================================
-
-- Download this plugin from http://doc.densan-labs.net/bitbucket-pullrequest-builder.hpi (Temporary link)
-- Go to Jenkins -> Manage Plugins -> Advanced 
-- Choose File and select .hpi file above and upload
-- Ensure you restart Jenkins
-
 
 Creating a Job
 =================================

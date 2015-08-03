@@ -121,7 +121,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public QueueTaskFuture<?> startJob(BitbucketCause cause) {
-        Map<String, ParameterValue> values = new HashMap<String, ParameterValue>();
+        Map<String, ParameterValue> values = this.getDefaultParameters();
         values.put("sourceBranch", new StringParameterValue("sourceBranch", cause.getSourceBranch()));
         values.put("targetBranch", new StringParameterValue("targetBranch", cause.getTargetBranch()));
         values.put("repositoryOwner", new StringParameterValue("repositoryOwner", cause.getRepositoryOwner()));

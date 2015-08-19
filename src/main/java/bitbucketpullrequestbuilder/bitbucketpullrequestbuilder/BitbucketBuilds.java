@@ -56,8 +56,10 @@ public class BitbucketBuilds {
         else {
             buildUrl = rootUrl + build.getUrl();
         }
-        repository.deletePullRequestComment(cause.getPullRequestId(), cause.getBuildStartCommentId());
-        repository.postFinishedComment(cause.getPullRequestId(), cause.getSourceCommitHash(), cause.getDestinationCommitHash(), result == Result.SUCCESS, buildUrl);
+        if ( this.trigger.getPostPRComment() ) {
+          repository.deletePullRequestComment(cause.getPullRequestId(), cause.getBuildStartCommentId());
+          repository.postFinishedComment(cause.getPullRequestId(), cause.getSourceCommitHash(), cause.getDestinationCommitHash(), result == Result.SUCCESS, buildUrl);
+        }
         if ( this.trigger.getApproveIfSuccess() && result == Result.SUCCESS ) {
             this.repository.postPullRequestApproval(cause.getPullRequestId());
         }

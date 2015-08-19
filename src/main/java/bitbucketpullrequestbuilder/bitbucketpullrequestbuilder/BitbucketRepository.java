@@ -70,7 +70,10 @@ public class BitbucketRepository {
 
     public void addFutureBuildTasks(Collection<BitbucketPullRequestResponseValue> pullRequests) {
         for(BitbucketPullRequestResponseValue pullRequest : pullRequests) {
-            String commentId = postBuildStartCommentTo(pullRequest);
+            String commentId = "";
+            if ( this.trigger.getPostPRComment()) {
+              commentId = postBuildStartCommentTo(pullRequest);
+            }
             if ( this.trigger.getApproveIfSuccess() ) {
                 deletePullRequestApproval(pullRequest.getId());
             }

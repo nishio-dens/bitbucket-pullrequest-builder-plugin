@@ -92,20 +92,21 @@ public class ApiClient {
 
     private HttpClient getHttpClient() {
         HttpClient client = new HttpClient();
-        if (Jenkins.getInstance() != null) {
-            ProxyConfiguration proxy = Jenkins.getInstance().proxy;
-            if (proxy != null) {
-                logger.info("Jenkins proxy: " + proxy.name + ":" + proxy.port);
-                client.getHostConfiguration().setProxy(proxy.name, proxy.port);
-                String username = proxy.getUserName();
-                String password = proxy.getPassword();
-                // Consider it to be passed if username specified. Sufficient?
-                if (username != null && !"".equals(username.trim())) {
-                    logger.info("Using proxy authentication (user=" + username + ")");
-                    client.getState().setProxyCredentials(AuthScope.ANY,
-                        new UsernamePasswordCredentials(username, password));
-                }
-            }
+        if (Jenkins.getInstance() == null) return client;
+
+        ProxyConfiguration proxy = Jenkins.getInstance().proxy;
+        if (proxy == null) return client;
+
+        logger.info("Jenkins proxy: " + proxy.name + ":" + proxy.port);
+        client.getHostConfiguration().setProxy(proxy.name, proxy.port);
+        String username = proxy.getUserName();
+        String password = proxy.getPassword();
+
+        // Consider it to be passed if username specified. Sufficient?
+        if (username != null && !"".equals(username.trim())) {
+            logger.info("Using proxy authentication (user=" + username + ")");
+            client.getState().setProxyCredentials(AuthScope.ANY,
+                new UsernamePasswordCredentials(username, password));
         }
         return client;
     }
@@ -154,4 +155,3 @@ public class ApiClient {
         return new ObjectMapper().readValue(response, ref);
     }
 }
-

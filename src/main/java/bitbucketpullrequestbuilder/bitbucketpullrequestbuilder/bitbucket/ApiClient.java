@@ -37,7 +37,7 @@ public class ApiClient {
     }
 
     public List<Pullrequest> getPullRequests() {
-        String response = getRequest(V2_API_BASE_URL + this.owner + "/" + this.repositoryName + "/pullrequests/");
+        String response = get(V2_API_BASE_URL + this.owner + "/" + this.repositoryName + "/pullrequests/");
         try {
             return parse(response, Pullrequest.Response.class).getPullrequests();
         } catch(Exception e) {
@@ -47,7 +47,7 @@ public class ApiClient {
     }
 
     public List<Pullrequest.Comment> getPullRequestComments(String commentOwnerName, String commentRepositoryName, String pullRequestId) {
-        String response = getRequest(
+        String response = get(
             V1_API_BASE_URL + commentOwnerName + "/" + commentRepositoryName + "/pullrequests/" + pullRequestId + "/comments");
         try {
             return parse(response, new TypeReference<List<Pullrequest.Comment>>() {});
@@ -60,7 +60,7 @@ public class ApiClient {
     public void deletePullRequestComment(String pullRequestId, String commentId) {
         String path = V1_API_BASE_URL + this.owner + "/" + this.repositoryName + "/pullrequests/" + pullRequestId + "/comments/" + commentId;
         //https://bitbucket.org/api/1.0/repositories/{accountname}/{repo_slug}/pullrequests/{pull_request_id}/comments/{comment_id}
-        deleteRequest(path);
+        delete(path);
     }
 
 
@@ -68,7 +68,7 @@ public class ApiClient {
         String path = V1_API_BASE_URL + this.owner + "/" + this.repositoryName + "/pullrequests/" + pullRequestId + "/comments";
         try {
             NameValuePair content = new NameValuePair("content", comment);
-            String response = postRequest(path, new NameValuePair[]{ content });
+            String response = post(path, new NameValuePair[]{ content });
             return parse(response, Pullrequest.Comment.class);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
@@ -81,13 +81,13 @@ public class ApiClient {
 
     public void deletePullRequestApproval(String pullRequestId) {
         String path = V2_API_BASE_URL + this.owner + "/" + this.repositoryName + "/pullrequests/" + pullRequestId + "/approve";
-        deleteRequest(path);
+        delete(path);
     }
 
     public Pullrequest.Participant postPullRequestApproval(String pullRequestId) {
         String path = V2_API_BASE_URL + this.owner + "/" + this.repositoryName + "/pullrequests/" + pullRequestId + "/approve";
         try {
-            String response = postRequest(path, new NameValuePair[]{});
+            String response = post(path, new NameValuePair[]{});
             return parse(response, Pullrequest.Participant.class);
         } catch (IOException e) {
             e.printStackTrace();
@@ -115,54 +115,33 @@ public class ApiClient {
         return client;
     }
 
-    private String getRequest(String path) {
+    private String get(String path) {
+        return send(new GetMethod(path));
+    }
+
+    private String post(String path, NameValuePair[] data) {
+        PostMethod req = new PostMethod(path);
+        req.setRequestBody(data);
+        return send(req);
+    }
+
+    private void delete(String path) {
+         send(new DeleteMethod(path));
+    }
+
+    private String send(HttpMethodBase req) {
         HttpClient client = getHttpClient();
         client.getState().setCredentials(AuthScope.ANY, credentials);
-        GetMethod httpget = new GetMethod(path);
         client.getParams().setAuthenticationPreemptive(true);
-        String response = null;
         try {
-            client.executeMethod(httpget);
-            response = httpget.getResponseBodyAsString();
+            client.executeMethod(req);
+            return req.getResponseBodyAsString();
         } catch (HttpException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return response;
-    }
-
-    public void deleteRequest(String path) {
-        HttpClient client = getHttpClient();
-        client.getState().setCredentials(AuthScope.ANY, credentials);
-        DeleteMethod httppost = new DeleteMethod(path);
-        client.getParams().setAuthenticationPreemptive(true);
-        String response = "";
-        try {
-            client.executeMethod(httppost);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private String postRequest(String path, NameValuePair[] params) throws UnsupportedEncodingException {
-        HttpClient client = getHttpClient();
-        client.getState().setCredentials(AuthScope.ANY, credentials);
-        PostMethod httppost = new PostMethod(path);
-        httppost.setRequestBody(params);
-        client.getParams().setAuthenticationPreemptive(true);
-        String response = "";
-        try {
-            client.executeMethod(httppost);
-            response = httppost.getResponseBodyAsString();
-            logger.info("API Request Response: " + response);
-        } catch (HttpException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return response;
-
+        return null;
     }
 
     private <R> R parse(String response, Class<R> cls) throws IOException {

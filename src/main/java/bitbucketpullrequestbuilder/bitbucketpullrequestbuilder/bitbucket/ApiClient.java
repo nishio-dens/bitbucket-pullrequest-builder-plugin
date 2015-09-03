@@ -39,7 +39,7 @@ public class ApiClient {
     public List<Pullrequest> getPullRequests() {
         String response = getRequest(V2_API_BASE_URL + this.owner + "/" + this.repositoryName + "/pullrequests/");
         try {
-            return parsePullRequestJson(response).getPullrequests();
+            return parse(response, Pullrequest.Response.class).getPullrequests();
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
         }
@@ -50,7 +50,7 @@ public class ApiClient {
         String response = getRequest(
             V1_API_BASE_URL + commentOwnerName + "/" + commentRepositoryName + "/pullrequests/" + pullRequestId + "/comments");
         try {
-            return parseCommentJson(response);
+            return parse(response, new TypeReference<List<Pullrequest.Comment>>() {});
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
         }
@@ -69,8 +69,7 @@ public class ApiClient {
         try {
             NameValuePair content = new NameValuePair("content", comment);
             String response = postRequest(path, new NameValuePair[]{ content });
-            return parseSingleCommentJson(response);
-
+            return parse(response, Pullrequest.Comment.class);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
@@ -89,7 +88,7 @@ public class ApiClient {
         String path = V2_API_BASE_URL + this.owner + "/" + this.repositoryName + "/pullrequests/" + pullRequestId + "/approve";
         try {
             String response = postRequest(path, new NameValuePair[]{});
-            return parseApprovalJson(response);
+            return parse(response, Pullrequest.Participant.class);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -166,39 +165,11 @@ public class ApiClient {
 
     }
 
-    private Pullrequest.Response parsePullRequestJson(String response) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        Pullrequest.Response parsedResponse;
-        parsedResponse = mapper.readValue(response, Pullrequest.Response.class);
-        return parsedResponse;
+    private <R> R parse(String response, Class<R> cls) throws IOException {
+        return new ObjectMapper().readValue(response, cls);
     }
-
-    private List<Pullrequest.Comment> parseCommentJson(String response) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        List<Pullrequest.Comment> parsedResponse;
-        parsedResponse = mapper.readValue(
-                response,
-                new TypeReference<List<Pullrequest.Comment>>() {
-                });
-        return parsedResponse;
-    }
-
-    private Pullrequest.Comment parseSingleCommentJson(String response) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        Pullrequest.Comment parsedResponse;
-        parsedResponse = mapper.readValue(
-                response,
-                Pullrequest.Comment.class);
-        return parsedResponse;
-    }
-
-    private Pullrequest.Participant parseApprovalJson(String response) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        Pullrequest.Participant parsedResponse;
-        parsedResponse = mapper.readValue(
-                response,
-                Pullrequest.Participant.class);
-        return parsedResponse;
+    private <R> R parse(String response, TypeReference<R> ref) throws IOException {
+        return new ObjectMapper().readValue(response, ref);
     }
 }
 

@@ -37,9 +37,8 @@ public class ApiClient {
     }
 
     public List<Pullrequest> getPullRequests() {
-        String response = get(V2_API_BASE_URL + this.owner + "/" + this.repositoryName + "/pullrequests/");
         try {
-            return parse(response, Pullrequest.Response.class).getPullrequests();
+            return parse(get(v2("/pullrequests/")), Pullrequest.Response.class).getPullrequests();
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
         }
@@ -47,10 +46,8 @@ public class ApiClient {
     }
 
     public List<Pullrequest.Comment> getPullRequestComments(String commentOwnerName, String commentRepositoryName, String pullRequestId) {
-        String response = get(
-            V1_API_BASE_URL + commentOwnerName + "/" + commentRepositoryName + "/pullrequests/" + pullRequestId + "/comments");
         try {
-            return parse(response, new TypeReference<List<Pullrequest.Comment>>() {});
+            return parse(get(v1("/pullrequests/" + pullRequestId + "/comments")), new TypeReference<List<Pullrequest.Comment>>() {});
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
         }
@@ -65,10 +62,10 @@ public class ApiClient {
 
 
     public Pullrequest.Comment postPullRequestComment(String pullRequestId, String comment) {
-        String path = V1_API_BASE_URL + this.owner + "/" + this.repositoryName + "/pullrequests/" + pullRequestId + "/comments";
         try {
-            NameValuePair content = new NameValuePair("content", comment);
-            String response = post(path, new NameValuePair[]{ content });
+            String response = post(
+                v1("/pullrequests/" + pullRequestId + "/comments"),
+                new NameValuePair[]{ new NameValuePair("content", comment) });
             return parse(response, Pullrequest.Comment.class);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
@@ -80,15 +77,13 @@ public class ApiClient {
     }
 
     public void deletePullRequestApproval(String pullRequestId) {
-        String path = V2_API_BASE_URL + this.owner + "/" + this.repositoryName + "/pullrequests/" + pullRequestId + "/approve";
-        delete(path);
+        delete(v2("/pullrequests/" + pullRequestId + "/approve"));
     }
 
     public Pullrequest.Participant postPullRequestApproval(String pullRequestId) {
-        String path = V2_API_BASE_URL + this.owner + "/" + this.repositoryName + "/pullrequests/" + pullRequestId + "/approve";
         try {
-            String response = post(path, new NameValuePair[]{});
-            return parse(response, Pullrequest.Participant.class);
+            return parse(post(v2("/pullrequests/" + pullRequestId + "/approve"),
+                new NameValuePair[]{}), Pullrequest.Participant.class);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -113,6 +108,14 @@ public class ApiClient {
             }
         }
         return client;
+    }
+
+    private String v1(String url) {
+        return V1_API_BASE_URL + this.owner + "/" + this.repositoryName + url;
+    }
+
+    private String v2(String url) {
+        return V2_API_BASE_URL + this.owner + "/" + this.repositoryName + url;
     }
 
     private String get(String path) {

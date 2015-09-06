@@ -1,6 +1,6 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BitbucketPullRequestResponseValue;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
 import hudson.model.AbstractProject;
 
 import java.util.Collection;
@@ -27,7 +27,7 @@ public class BitbucketPullRequestsBuilder {
     public void run() {
         logger.info("Build Start.");
         this.repository.init();
-        Collection<BitbucketPullRequestResponseValue> targetPullRequests = this.repository.getTargetPullRequests();
+        Collection<Pullrequest> targetPullRequests = this.repository.getTargetPullRequests();
         this.repository.addFutureBuildTasks(targetPullRequests);
     }
 

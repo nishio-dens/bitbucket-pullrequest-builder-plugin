@@ -8,10 +8,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BitbucketApiClient;
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BitbucketPullRequestComment;
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BitbucketPullRequestResponseValue;
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BitbucketPullRequestResponseValueRepository;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
 
 /**
  * Created by nishio
@@ -32,7 +30,7 @@ public class BitbucketRepository {
     private String projectPath;
     private BitbucketPullRequestsBuilder builder;
     private BitbucketBuildTrigger trigger;
-    private BitbucketApiClient client;
+    private ApiClient client;
 
     public BitbucketRepository(String projectPath, BitbucketPullRequestsBuilder builder) {
         this.projectPath = projectPath;
@@ -41,18 +39,18 @@ public class BitbucketRepository {
 
     public void init() {
         trigger = this.builder.getTrigger();
-        client = new BitbucketApiClient(
+        client = new ApiClient(
                 trigger.getUsername(),
                 trigger.getPassword(),
                 trigger.getRepositoryOwner(),
                 trigger.getRepositoryName());
     }
 
-    public Collection<BitbucketPullRequestResponseValue> getTargetPullRequests() {
+    public Collection<Pullrequest> getTargetPullRequests() {
         logger.info("Fetch PullRequests.");
-        List<BitbucketPullRequestResponseValue> pullRequests = client.getPullRequests();
-        List<BitbucketPullRequestResponseValue> targetPullRequests = new ArrayList<BitbucketPullRequestResponseValue>();
-        for(BitbucketPullRequestResponseValue pullRequest : pullRequests) {
+        List<Pullrequest> pullRequests = client.getPullRequests();
+        List<Pullrequest> targetPullRequests = new ArrayList<Pullrequest>();
+        for(Pullrequest pullRequest : pullRequests) {
             if (isBuildTarget(pullRequest)) {
                 targetPullRequests.add(pullRequest);
             }
@@ -60,16 +58,16 @@ public class BitbucketRepository {
         return targetPullRequests;
     }
 
-    public String postBuildStartCommentTo(BitbucketPullRequestResponseValue pullRequest) {
+    public String postBuildStartCommentTo(Pullrequest pullRequest) {
             String sourceCommit = pullRequest.getSource().getCommit().getHash();
             String destinationCommit = pullRequest.getDestination().getCommit().getHash();
             String comment = String.format(BUILD_START_MARKER, builder.getProject().getDisplayName(), sourceCommit, destinationCommit);
-            BitbucketPullRequestComment commentResponse = this.client.postPullRequestComment(pullRequest.getId(), comment);
-            return commentResponse.getCommentId().toString();
+            Pullrequest.Comment commentResponse = this.client.postPullRequestComment(pullRequest.getId(), comment);
+            return commentResponse.getId().toString();
     }
 
-    public void addFutureBuildTasks(Collection<BitbucketPullRequestResponseValue> pullRequests) {
-        for(BitbucketPullRequestResponseValue pullRequest : pullRequests) {
+    public void addFutureBuildTasks(Collection<Pullrequest> pullRequests) {
+        for(Pullrequest pullRequest : pullRequests) {
             String commentId = postBuildStartCommentTo(pullRequest);
             if ( this.trigger.getApproveIfSuccess() ) {
                 deletePullRequestApproval(pullRequest.getId());
@@ -112,7 +110,7 @@ public class BitbucketRepository {
         this.client.postPullRequestApproval(pullRequestId);
     }
 
-    private boolean isBuildTarget(BitbucketPullRequestResponseValue pullRequest) {
+    private boolean isBuildTarget(Pullrequest pullRequest) {
 
         boolean shouldBuild = true;
         if (pullRequest.getState() != null && pullRequest.getState().equals("OPEN")) {
@@ -122,18 +120,18 @@ public class BitbucketRepository {
 
             String sourceCommit = pullRequest.getSource().getCommit().getHash();
 
-            BitbucketPullRequestResponseValueRepository destination = pullRequest.getDestination();
+            Pullrequest.Revision destination = pullRequest.getDestination();
             String owner = destination.getRepository().getOwnerName();
             String repositoryName = destination.getRepository().getRepositoryName();
             String destinationCommit = destination.getCommit().getHash();
 
             String id = pullRequest.getId();
-            List<BitbucketPullRequestComment> comments = client.getPullRequestComments(owner, repositoryName, id);
+            List<Pullrequest.Comment> comments = client.getPullRequestComments(owner, repositoryName, id);
 
             if (comments != null) {
                 Collections.sort(comments);
                 Collections.reverse(comments);
-                for (BitbucketPullRequestComment comment : comments) {
+                for (Pullrequest.Comment comment : comments) {
                     String content = comment.getContent();
                     if (content == null || content.isEmpty()) {
                         continue;

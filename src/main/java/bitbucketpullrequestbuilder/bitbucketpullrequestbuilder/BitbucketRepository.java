@@ -10,6 +10,12 @@ import java.util.regex.Pattern;
 
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
+
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
 
 /**
  * Created by nishio
@@ -39,9 +45,10 @@ public class BitbucketRepository {
 
     public void init() {
         trigger = this.builder.getTrigger();
+        StandardUsernamePasswordCredentials credentials = getCredentials(trigger.getCredentialsId());
         client = new ApiClient(
-                trigger.getUsername(),
-                trigger.getPassword(),
+                credentials.getUsername(),
+                credentials.getPassword().getPlainText(),
                 trigger.getRepositoryOwner(),
                 trigger.getRepositoryName());
     }
@@ -191,5 +198,13 @@ public class BitbucketRepository {
             }
         }
         return false;
+    }
+
+    private StandardUsernamePasswordCredentials getCredentials(String credentialsId) {
+        return CredentialsMatchers
+                .firstOrNull(
+                        CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class),
+                        CredentialsMatchers.allOf(CredentialsMatchers.withId(credentialsId),
+                                instanceOf(UsernamePasswordCredentials.class)));
     }
 }

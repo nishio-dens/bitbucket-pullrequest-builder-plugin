@@ -5,6 +5,12 @@
   <f:entry title="${%Credentials}" field="credentialsId">
       <c:select/>
   </f:entry>
+  <f:entry title="Bitbucket BasicAuth Username" field="username">
+    <f:textbox />
+  </f:entry>
+  <f:entry title="Bitbucket BasicAuth Password" field="password">
+    <f:password />
+  </f:entry>
   <f:entry title="RepositoryOwner" field="repositoryOwner">
     <f:textbox />
   </f:entry>

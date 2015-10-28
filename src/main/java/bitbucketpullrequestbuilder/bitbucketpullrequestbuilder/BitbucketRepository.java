@@ -45,10 +45,17 @@ public class BitbucketRepository {
 
     public void init() {
         trigger = this.builder.getTrigger();
+        String username = trigger.getUsername();
+        String password = trigger.getPassword();
         StandardUsernamePasswordCredentials credentials = getCredentials(trigger.getCredentialsId());
+        if (credentials != null) {
+            username = credentials.getUsername();
+            password = credentials.getPassword().getPlainText();
+        }
+
         client = new ApiClient(
-                credentials.getUsername(),
-                credentials.getPassword().getPlainText(),
+                username,
+                password,
                 trigger.getRepositoryOwner(),
                 trigger.getRepositoryName());
     }

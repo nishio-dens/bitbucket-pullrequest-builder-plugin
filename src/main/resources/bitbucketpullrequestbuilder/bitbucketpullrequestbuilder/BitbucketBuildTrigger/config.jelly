@@ -14,6 +14,12 @@
   <f:entry title="RepositoryName" field="repositoryName">
     <f:textbox />
   </f:entry>
+  <f:entry title="CI Identifier" field="ciKey">
+    <f:textbox default="jenkins" />
+  </f:entry>
+  <f:entry title="CI Name" field="ciName">
+    <f:textbox default="Jenkins" />
+  </f:entry>
   <f:entry title="CI Skip Phrases" field="ciSkipPhrases">
     <f:textbox />
   </f:entry>

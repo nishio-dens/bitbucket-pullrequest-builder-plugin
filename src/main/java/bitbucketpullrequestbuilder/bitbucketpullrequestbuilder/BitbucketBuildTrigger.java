@@ -28,6 +28,8 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     private final String password;
     private final String repositoryOwner;
     private final String repositoryName;
+    private final String ciKey;
+    private final String ciName;
     private final String ciSkipPhrases;
     private final boolean checkDestinationCommit;
     private final boolean approveIfSuccess;
@@ -45,6 +47,8 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             String password,
             String repositoryOwner,
             String repositoryName,
+            String ciKey,
+            String ciName,
             String ciSkipPhrases,
             boolean checkDestinationCommit,
             boolean approveIfSuccess
@@ -56,6 +60,8 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         this.password = password;
         this.repositoryOwner = repositoryOwner;
         this.repositoryName = repositoryName;
+        this.ciKey = ciKey;
+        this.ciName = ciName;
         this.ciSkipPhrases = ciSkipPhrases;
         this.checkDestinationCommit = checkDestinationCommit;
         this.approveIfSuccess = approveIfSuccess;
@@ -83,6 +89,14 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     public String getRepositoryName() {
         return repositoryName;
+    }
+
+    public String getCiKey() {
+        return ciKey;
+    }
+
+    public String getCiName() {
+        return ciName;
     }
 
     public String getCiSkipPhrases() {

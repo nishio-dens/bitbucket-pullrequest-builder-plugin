@@ -9,7 +9,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -23,17 +22,20 @@ import hudson.ProxyConfiguration;
  */
 public class ApiClient {
     private static final Logger logger = Logger.getLogger(ApiClient.class.getName());
-    private static final String BITBUCKET_HOST = "bitbucket.org";
     private static final String V1_API_BASE_URL = "https://bitbucket.org/api/1.0/repositories/";
     private static final String V2_API_BASE_URL = "https://bitbucket.org/api/2.0/repositories/";
     private String owner;
     private String repositoryName;
     private Credentials credentials;
+    private String key;
+    private String name;
 
-    public ApiClient(String username, String password, String owner, String repositoryName) {
+    public ApiClient(String username, String password, String owner, String repositoryName, String key, String name) {
         this.credentials = new UsernamePasswordCredentials(username, password);
         this.owner = owner;
         this.repositoryName = repositoryName;
+        this.key = key;
+        this.name = name;
     }
 
     public List<Pullrequest> getPullRequests() {
@@ -54,26 +56,22 @@ public class ApiClient {
         return Collections.EMPTY_LIST;
     }
 
-    public void deletePullRequestComment(String pullRequestId, String commentId) {
-        String path = V1_API_BASE_URL + this.owner + "/" + this.repositoryName + "/pullrequests/" + pullRequestId + "/comments/" + commentId;
-        //https://bitbucket.org/api/1.0/repositories/{accountname}/{repo_slug}/pullrequests/{pull_request_id}/comments/{comment_id}
-        delete(path);
+    public boolean hasBuildStatus(String owner, String repositoryName, String revision) {
+        String url = v2(owner, repositoryName, "/commit/" + revision + "/statuses/build/" + this.key);
+        return get(url).contains("\"state\"");
     }
 
-
-    public Pullrequest.Comment postPullRequestComment(String pullRequestId, String comment) {
-        try {
-            String response = post(
-                v1("/pullrequests/" + pullRequestId + "/comments"),
-                new NameValuePair[]{ new NameValuePair("content", comment) });
-            return parse(response, Pullrequest.Comment.class);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
+    public void setBuildStatus(String owner, String repositoryName, String revision, BuildState state, String buildUrl, String comment) {
+        String url = v2(owner, repositoryName, "/commit/" + revision + "/statuses/build");
+        NameValuePair[] data = new NameValuePair[]{
+                new NameValuePair("description", comment),
+                new NameValuePair("key", this.key),
+                new NameValuePair("name", this.name),
+                new NameValuePair("state", state.toString()),
+                new NameValuePair("url", buildUrl),
+        };
+        logger.info("POST state " + state + " to " + url);
+        post(url, data);
     }
 
     public void deletePullRequestApproval(String pullRequestId) {
@@ -115,8 +113,12 @@ public class ApiClient {
         return V1_API_BASE_URL + this.owner + "/" + this.repositoryName + url;
     }
 
-    private String v2(String url) {
-        return V2_API_BASE_URL + this.owner + "/" + this.repositoryName + url;
+    private String v2(String path) {
+        return v2(this.owner, this.repositoryName, path);
+    }
+
+    private String v2(String owner, String repositoryName, String path) {
+        return V2_API_BASE_URL + owner + "/" + repositoryName + path;
     }
 
     private String get(String path) {

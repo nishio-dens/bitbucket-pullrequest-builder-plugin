@@ -25,6 +25,8 @@ Creating a Job
   - ex: * * * * *
 - In Bitbucket BasicAuth Username, write your bitbucket username like jenkins@densan-labs.net
 - In Bitbucket BasicAuth Password, write your password
+- In CI Identifier, enter an unique identifier among your Jenkins jobs related to the repo
+- In CI Name, enter a human readable name for your Jenkins server
 - Write RepositoryOwner
 - Write RepositoryName
 - Save to preserve your changes

@@ -5,28 +5,20 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BuildState;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
+import jenkins.model.Jenkins;
 
 /**
  * Created by nishio
  */
 public class BitbucketRepository {
     private static final Logger logger = Logger.getLogger(BitbucketRepository.class.getName());
-    public static final String BUILD_START_MARKER = "[*BuildStarted* **%s**] %s into %s";
-    public static final String BUILD_FINISH_MARKER = "[*BuildFinished* **%s**] %s into %s";
+    private static final String BUILD_DESCRIPTION = "%s: %s into %s";
+    private static final String BUILD_REQUEST_MARKER = "test this please";
 
-    public static final String BUILD_START_REGEX = "\\[\\*BuildStarted\\* \\*\\*%s\\*\\*\\] ([0-9a-fA-F]+) into ([0-9a-fA-F]+)";
-    public static final String BUILD_FINISH_REGEX = "\\[\\*BuildFinished\\* \\*\\*%s\\*\\*\\] ([0-9a-fA-F]+) into ([0-9a-fA-F]+)";
-
-    public static final String BUILD_FINISH_SENTENCE = BUILD_FINISH_MARKER + " \n\n **%s** - %s";
-    public static final String BUILD_REQUEST_MARKER = "test this please";
-
-    public static final String BUILD_SUCCESS_COMMENT =  "SUCCESS";
-    public static final String BUILD_FAILURE_COMMENT = "FAILURE";
     private String projectPath;
     private BitbucketPullRequestsBuilder builder;
     private BitbucketBuildTrigger trigger;
@@ -43,7 +35,10 @@ public class BitbucketRepository {
                 trigger.getUsername(),
                 trigger.getPassword(),
                 trigger.getRepositoryOwner(),
-                trigger.getRepositoryName());
+                trigger.getRepositoryName(),
+                trigger.getCiKey(),
+                trigger.getCiName()
+        );
     }
 
     public Collection<Pullrequest> getTargetPullRequests() {
@@ -58,17 +53,8 @@ public class BitbucketRepository {
         return targetPullRequests;
     }
 
-    public String postBuildStartCommentTo(Pullrequest pullRequest) {
-            String sourceCommit = pullRequest.getSource().getCommit().getHash();
-            String destinationCommit = pullRequest.getDestination().getCommit().getHash();
-            String comment = String.format(BUILD_START_MARKER, builder.getProject().getDisplayName(), sourceCommit, destinationCommit);
-            Pullrequest.Comment commentResponse = this.client.postPullRequestComment(pullRequest.getId(), comment);
-            return commentResponse.getId().toString();
-    }
-
     public void addFutureBuildTasks(Collection<Pullrequest> pullRequests) {
         for(Pullrequest pullRequest : pullRequests) {
-            String commentId = postBuildStartCommentTo(pullRequest);
             if ( this.trigger.getApproveIfSuccess() ) {
                 deletePullRequestApproval(pullRequest.getId());
             }
@@ -82,24 +68,26 @@ public class BitbucketRepository {
                     pullRequest.getDestination().getRepository().getRepositoryName(),
                     pullRequest.getTitle(),
                     pullRequest.getSource().getCommit().getHash(),
-                    pullRequest.getDestination().getCommit().getHash(),
-                    commentId);
+                    pullRequest.getDestination().getCommit().getHash());
+            setBuildStatus(cause, BuildState.INPROGRESS, Jenkins.getInstance().getRootUrl());
             this.builder.getTrigger().startJob(cause);
         }
     }
 
-    public void deletePullRequestComment(String pullRequestId, String commentId) {
-        this.client.deletePullRequestComment(pullRequestId,commentId);
-    }
+    public void setBuildStatus(BitbucketCause cause, BuildState state, String buildUrl) {
+        String comment = null;
+        String sourceCommit = cause.getSourceCommitHash();
+        String owner = cause.getRepositoryOwner();
+        String repository = cause.getRepositoryName();
+        String destinationBranch = cause.getTargetBranch();
 
-    public void postFinishedComment(String pullRequestId, String sourceCommit,  String destinationCommit, boolean success, String buildUrl) {
-        String message = BUILD_FAILURE_COMMENT;
-        if (success){
-            message = BUILD_SUCCESS_COMMENT;
+        logger.info("setBuildStatus " + state + " for commit: " + sourceCommit + " with url " + buildUrl);
+
+        if (state == BuildState.FAILED || state == BuildState.SUCCESSFUL) {
+            comment = String.format(BUILD_DESCRIPTION, builder.getProject().getDisplayName(), sourceCommit, destinationBranch);
         }
-        String comment = String.format(BUILD_FINISH_SENTENCE, builder.getProject().getDisplayName(), sourceCommit, destinationCommit, message, buildUrl);
 
-        this.client.postPullRequestComment(pullRequestId, comment);
+        this.client.setBuildStatus(owner, repository, sourceCommit, state, buildUrl, comment);
     }
 
     public void deletePullRequestApproval(String pullRequestId) {
@@ -111,19 +99,16 @@ public class BitbucketRepository {
     }
 
     private boolean isBuildTarget(Pullrequest pullRequest) {
-
-        boolean shouldBuild = true;
         if (pullRequest.getState() != null && pullRequest.getState().equals("OPEN")) {
             if (isSkipBuild(pullRequest.getTitle())) {
                 return false;
             }
 
-            String sourceCommit = pullRequest.getSource().getCommit().getHash();
-
+            Pullrequest.Revision source = pullRequest.getSource();
+            String sourceCommit = source.getCommit().getHash();
             Pullrequest.Revision destination = pullRequest.getDestination();
             String owner = destination.getRepository().getOwnerName();
             String repositoryName = destination.getRepository().getRepositoryName();
-            String destinationCommit = destination.getCommit().getHash();
 
             String id = pullRequest.getId();
             List<Pullrequest.Comment> comments = client.getPullRequestComments(owner, repositoryName, id);
@@ -137,47 +122,23 @@ public class BitbucketRepository {
                         continue;
                     }
 
-                    //These will match any start or finish message -- need to check commits
-                    String project_build_start = String.format(BUILD_START_REGEX, builder.getProject().getDisplayName());
-                    String project_build_finished = String.format(BUILD_FINISH_REGEX, builder.getProject().getDisplayName());
-                    Matcher startMatcher = Pattern.compile(project_build_start, Pattern.CASE_INSENSITIVE).matcher(content);
-                    Matcher finishMatcher = Pattern.compile(project_build_finished, Pattern.CASE_INSENSITIVE).matcher(content);
-
-                    if (startMatcher.find() ||
-                        finishMatcher.find()) {
-
-                        String sourceCommitMatch;
-                        String destinationCommitMatch;
-
-                        if (startMatcher.find(0)) {
-                            sourceCommitMatch = startMatcher.group(1);
-                            destinationCommitMatch = startMatcher.group(2);
-                        } else {
-                            sourceCommitMatch = finishMatcher.group(1);
-                            destinationCommitMatch = finishMatcher.group(2);
-                        }
-
-                        //first check source commit -- if it doesn't match, just move on. If it does, investigate further.
-                        if (sourceCommitMatch.equalsIgnoreCase(sourceCommit)) {
-                            // if we're checking destination commits, and if this doesn't match, then move on.
-                            if (this.trigger.getCheckDestinationCommit()
-                                    && (!destinationCommitMatch.equalsIgnoreCase(destinationCommit))) {
-                            	continue;
-                            }
-
-                            shouldBuild = false;
-                            break;
-                        }
-                    }
-
                     if (content.contains(BUILD_REQUEST_MARKER.toLowerCase())) {
-                        shouldBuild = true;
-                        break;
+                        return true;
                     }
                 }
             }
+
+            Pullrequest.Repository sourceRepository = source.getRepository();
+
+            if (this.client.hasBuildStatus(sourceRepository.getOwnerName(), sourceRepository.getRepositoryName(), sourceCommit)) {
+                logger.info("Commit " + sourceCommit + " has already been processed");
+                return false;
+            }
+
+            return true;
         }
-        return shouldBuild;
+
+        return false;
     }
 
     private boolean isSkipBuild(String pullRequestTitle) {

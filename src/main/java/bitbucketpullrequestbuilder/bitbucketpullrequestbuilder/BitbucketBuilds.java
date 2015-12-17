@@ -1,5 +1,6 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BuildState;
 import hudson.model.AbstractBuild;
 import hudson.model.Cause;
 import hudson.model.Result;
@@ -51,13 +52,13 @@ public class BitbucketBuilds {
         String rootUrl = Jenkins.getInstance().getRootUrl();
         String buildUrl = "";
         if (rootUrl == null) {
-            buildUrl = " PLEASE SET JENKINS ROOT URL FROM GLOBAL CONFIGURATION " + build.getUrl();
-        }
-        else {
+            logger.warning("PLEASE SET JENKINS ROOT URL IN GLOBAL CONFIGURATION FOR BUILD STATE REPORTING");
+        } else {
             buildUrl = rootUrl + build.getUrl();
+            BuildState state = result == Result.SUCCESS ? BuildState.SUCCESSFUL : BuildState.FAILED;
+            repository.setBuildStatus(cause, state, buildUrl);
         }
-        repository.deletePullRequestComment(cause.getPullRequestId(), cause.getBuildStartCommentId());
-        repository.postFinishedComment(cause.getPullRequestId(), cause.getSourceCommitHash(), cause.getDestinationCommitHash(), result == Result.SUCCESS, buildUrl);
+
         if ( this.trigger.getApproveIfSuccess() && result == Result.SUCCESS ) {
             this.repository.postPullRequestApproval(cause.getPullRequestId());
         }

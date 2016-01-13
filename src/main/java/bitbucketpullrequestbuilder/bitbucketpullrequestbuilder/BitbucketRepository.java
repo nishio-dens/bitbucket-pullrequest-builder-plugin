@@ -100,7 +100,7 @@ public class BitbucketRepository {
 
     private boolean isBuildTarget(Pullrequest pullRequest) {
         if (pullRequest.getState() != null && pullRequest.getState().equals("OPEN")) {
-            if (isSkipBuild(pullRequest.getTitle())) {
+            if (isSkipBuild(pullRequest.getTitle()) || !isFilteredBuild(pullRequest)) {
                 return false;
             }
 
@@ -152,5 +152,22 @@ public class BitbucketRepository {
             }
         }
         return false;
+    }
+
+    private boolean isFilteredBuild(Pullrequest pullRequest) {
+        BitbucketCause cause = new BitbucketCause(
+          pullRequest.getSource().getBranch().getName(),
+          pullRequest.getDestination().getBranch().getName(),
+          pullRequest.getSource().getRepository().getOwnerName(),
+          pullRequest.getSource().getRepository().getRepositoryName(),
+          pullRequest.getId(),
+          pullRequest.getDestination().getRepository().getOwnerName(),
+          pullRequest.getDestination().getRepository().getRepositoryName(),
+          pullRequest.getTitle(),
+          pullRequest.getSource().getCommit().getHash(),
+          pullRequest.getDestination().getCommit().getHash()
+        );
+        BitbucketBuildFilter filter = new BitbucketBuildFilter(this.trigger.getBranchesFilter());
+        return filter.approved(cause);
     }
 }

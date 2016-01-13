@@ -28,16 +28,17 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     private final String password;
     private final String repositoryOwner;
     private final String repositoryName;
+    private final String branchesFilter;
     private final String ciKey;
     private final String ciName;
     private final String ciSkipPhrases;
     private final boolean checkDestinationCommit;
     private final boolean approveIfSuccess;
-    
+
     transient private BitbucketPullRequestsBuilder bitbucketPullRequestsBuilder;
 
     @Extension
-    public static final BitbucketBuildTriggerDescriptor descriptor = new BitbucketBuildTriggerDescriptor();
+    public static final BitbucketBuildTriggerDescriptor descriptor = new BitbucketBuildTriggerDescriptor();   
 
     @DataBoundConstructor
     public BitbucketBuildTrigger(
@@ -47,6 +48,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             String password,
             String repositoryOwner,
             String repositoryName,
+            String branchesFilter,
             String ciKey,
             String ciName,
             String ciSkipPhrases,
@@ -60,6 +62,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         this.password = password;
         this.repositoryOwner = repositoryOwner;
         this.repositoryName = repositoryName;
+        this.branchesFilter = branchesFilter;
         this.ciKey = ciKey;
         this.ciName = ciName;
         this.ciSkipPhrases = ciSkipPhrases;
@@ -91,6 +94,10 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         return repositoryName;
     }
 
+    public String getBranchesFilter() {
+        return branchesFilter;
+    }
+
     public String getCiKey() {
         return ciKey;
     }
@@ -102,7 +109,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     public String getCiSkipPhrases() {
         return ciSkipPhrases;
     }
-    
+
     public boolean getCheckDestinationCommit() {
     	return checkDestinationCommit;
     }

@@ -85,22 +85,23 @@ public class BitbucketBuildFilter {
   }
   
   public BitbucketBuildFilter(String f) {
-    this.filter = f;
+    this.filter = f != null ? f : "";
     this.buildFilter(this.filter);
   }
   
   private void buildFilter(String filter) {
+    logger.log(Level.INFO, "Build filter by phrase: {0}", filter);
     for(Filter f : AvailableFilters) {
       if (f.check(filter)) {
         this.currFilter = f;
         logger.log(Level.INFO, "Using filter: {0}", f.getClass().getSimpleName());
         break;
       }
-    }
-    logger.warning("No available filters to use ...");  
+    }  
   }
   
   public boolean approved(BitbucketCause cause) {    
+    logger.log(Level.INFO, "Approve cause: {0}", cause.toString());
     return this.currFilter.apply(this.filter, cause);
   }  
 }

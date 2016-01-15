@@ -24,6 +24,7 @@ public class ApiClient {
     private static final Logger logger = Logger.getLogger(ApiClient.class.getName());
     private static final String V1_API_BASE_URL = "https://bitbucket.org/api/1.0/repositories/";
     private static final String V2_API_BASE_URL = "https://bitbucket.org/api/2.0/repositories/";
+    private static final String COMPUTED_KEY_FORMAT = "%s-%s";
     private String owner;
     private String repositoryName;
     private Credentials credentials;
@@ -56,26 +57,32 @@ public class ApiClient {
         return Collections.EMPTY_LIST;
     }
 
-    public boolean hasBuildStatus(String owner, String repositoryName, String revision) {
-        String url = v2(owner, repositoryName, "/commit/" + revision + "/statuses/build/" + this.key);
+    public boolean hasBuildStatus(String owner, String repositoryName, String revision, String keyEx) {
+        String url = v2(owner, repositoryName, "/commit/" + revision + "/statuses/build/" + String.format(COMPUTED_KEY_FORMAT, this.key, keyEx));
         return get(url).contains("\"state\"");
     }
 
-    public void setBuildStatus(String owner, String repositoryName, String revision, BuildState state, String buildUrl, String comment) {
+    public void setBuildStatus(String owner, String repositoryName, String revision, BuildState state, String buildUrl, String comment, String keyEx) {
         String url = v2(owner, repositoryName, "/commit/" + revision + "/statuses/build");
+        String computedKey = String.format(COMPUTED_KEY_FORMAT, this.key, keyEx);
         NameValuePair[] data = new NameValuePair[]{
                 new NameValuePair("description", comment),
-                new NameValuePair("key", this.key),
+                new NameValuePair("key", computedKey),
                 new NameValuePair("name", this.name),
                 new NameValuePair("state", state.toString()),
                 new NameValuePair("url", buildUrl),
         };
-        logger.info("POST state " + state + " to " + url);
-        post(url, data);
+        logger.log(Level.INFO, "POST state {0} to {1} with key {2} with response {3}", new Object[]{
+          state, url, computedKey, post(url, data)}
+        );
     }
 
     public void deletePullRequestApproval(String pullRequestId) {
         delete(v2("/pullrequests/" + pullRequestId + "/approve"));
+    }
+    
+    public void deleteComment(String pullRequestId, String commentId) {
+        delete(v1("/pullrequests/" + pullRequestId + "/comments/" + commentId + "/"));
     }
 
     public Pullrequest.Participant postPullRequestApproval(String pullRequestId) {
@@ -128,6 +135,7 @@ public class ApiClient {
     private String post(String path, NameValuePair[] data) {
         PostMethod req = new PostMethod(path);
         req.setRequestBody(data);
+        req.getParams().setContentCharset("utf-8");
         return send(req);
     }
 

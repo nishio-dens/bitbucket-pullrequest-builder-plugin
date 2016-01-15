@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BuildState;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
+import java.util.logging.Level;
 import jenkins.model.Jenkins;
 
 /**
@@ -87,7 +88,7 @@ public class BitbucketRepository {
             comment = String.format(BUILD_DESCRIPTION, builder.getProject().getDisplayName(), sourceCommit, destinationBranch);
         }
 
-        this.client.setBuildStatus(owner, repository, sourceCommit, state, buildUrl, comment);
+        this.client.setBuildStatus(owner, repository, sourceCommit, state, buildUrl, comment, this.builder.getProjectId());
     }
 
     public void deletePullRequestApproval(String pullRequestId) {
@@ -110,9 +111,20 @@ public class BitbucketRepository {
             String owner = destination.getRepository().getOwnerName();
             String repositoryName = destination.getRepository().getRepositoryName();
 
+            Pullrequest.Repository sourceRepository = source.getRepository();
+
+            boolean commitAlreadyBeenProcessed = this.client.hasBuildStatus(
+              sourceRepository.getOwnerName(), sourceRepository.getRepositoryName(), sourceCommit, this.builder.getProjectId()
+            );
+            if (commitAlreadyBeenProcessed) logger.log(Level.INFO, 
+              "Commit {0}#{1} has already been processed", 
+              new Object[]{ sourceCommit, this.builder.getProjectId() }
+            );
+            
             String id = pullRequest.getId();
             List<Pullrequest.Comment> comments = client.getPullRequestComments(owner, repositoryName, id);
 
+            boolean rebuildCommentAvailable = false;
             if (comments != null) {
                 Collections.sort(comments);
                 Collections.reverse(comments);
@@ -123,19 +135,18 @@ public class BitbucketRepository {
                     }
 
                     if (content.contains(BUILD_REQUEST_MARKER.toLowerCase())) {
-                        return true;
+                        rebuildCommentAvailable = true;
+                        logger.log(Level.INFO, 
+                          "Rebuild comment available for commit {0} and comment #{1}", 
+                          new Object[]{ sourceCommit, comment.getId() }
+                        );
+                        this.client.deleteComment(id, Integer.toString(comment.getId()));
                     }
                 }
-            }
+            }           
 
-            Pullrequest.Repository sourceRepository = source.getRepository();
-
-            if (this.client.hasBuildStatus(sourceRepository.getOwnerName(), sourceRepository.getRepositoryName(), sourceCommit)) {
-                logger.info("Commit " + sourceCommit + " has already been processed");
-                return false;
-            }
-
-            return true;
+            logger.log(Level.INFO, "Build target? {0}", rebuildCommentAvailable || !commitAlreadyBeenProcessed);
+            return rebuildCommentAvailable || !commitAlreadyBeenProcessed;
         }
 
         return false;

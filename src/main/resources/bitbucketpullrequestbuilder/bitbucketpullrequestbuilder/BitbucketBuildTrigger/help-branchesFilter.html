@@ -3,3 +3,10 @@ Available formats:
 * any pull requests applied for this project: "any", "*" or empty string.
 * filtered by destination branch: "my-branch" or more complex reg-ex filter "r:^master" (must be started with "r:" and case insensitive match).
 * filtered by source and destination branches: "s:source-branch d:dest-branch"
+* filtered by source and destination branches with regex: "s:r:^feature d:r:master$"
+* filtered by many destination/source branches: "s:one s:two s:three d:master d:r:master$"
+* filtered by many sources branches: "s:one s:two s:r:^three d:"
+When you using format with source branch filter "s" or destination filter "d", you must cpecify great than one source and destination filter, eg "s:1 s:2 s:... d:".
+Any sources and any destinations for pull request:
+* filter string: "*"
+* filter string: "s: d:"

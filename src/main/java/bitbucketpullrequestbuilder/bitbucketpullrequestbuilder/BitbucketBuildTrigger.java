@@ -29,6 +29,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     private final String repositoryOwner;
     private final String repositoryName;
     private final String branchesFilter;
+    private final boolean branchesFilterBySCMIncludes;
     private final String ciKey;
     private final String ciName;
     private final String ciSkipPhrases;
@@ -49,6 +50,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             String repositoryOwner,
             String repositoryName,
             String branchesFilter,
+            boolean branchesFilterBySCMIncludes,
             String ciKey,
             String ciName,
             String ciSkipPhrases,
@@ -63,6 +65,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         this.repositoryOwner = repositoryOwner;
         this.repositoryName = repositoryName;
         this.branchesFilter = branchesFilter;
+        this.branchesFilterBySCMIncludes = branchesFilterBySCMIncludes;
         this.ciKey = ciKey;
         this.ciName = ciName;
         this.ciSkipPhrases = ciSkipPhrases;
@@ -96,6 +99,10 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     public String getBranchesFilter() {
         return branchesFilter;
+    }
+    
+    public boolean getBranchesFilterBySCMIncludes() {
+      return branchesFilterBySCMIncludes;
     }
 
     public String getCiKey() {

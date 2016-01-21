@@ -1,0 +1,170 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketBuildFilter;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketCause;
+import java.util.regex.Pattern;
+import jenkins.plugins.git.AbstractGitSCMSource;
+import org.easymock.*;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import org.junit.Rule;
+import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.WithoutJenkins;
+
+/**
+ *
+ * @author maxvodo
+ */
+public class BitbucketBuildFilterTest {
+  
+  @Rule
+  public JenkinsRule jRule = new JenkinsRule();  
+  
+  @Test
+  @WithoutJenkins
+  public void mockTest() {
+    BitbucketCause cause = EasyMock.createMock(BitbucketCause.class);
+    EasyMock.expect(cause.getTargetBranch()).andReturn("mock").anyTimes();    
+    EasyMock.replay(cause);
+    for(Integer i : new Integer[] {1, 2, 3, 4, 5}) assertEquals("mock", cause.getTargetBranch());
+  }
+    
+  @Test
+  @WithoutJenkins
+  public void anyFilter() {
+    BitbucketCause cause = EasyMock.createMock(BitbucketCause.class);
+    EasyMock.expect(cause.getTargetBranch()).andReturn("master").anyTimes(); 
+    EasyMock.replay(cause);
+      
+    for(String f : new String[] {"", "*", "any"}) {
+      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      assertTrue(filter.approved(cause));
+    }
+    
+    for(String f : new String[] {"foo", "bar", " baz "}) {
+      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      assertFalse(filter.approved(cause));
+    }
+  }
+  
+  @Test
+  @WithoutJenkins
+  public void onlyDestinationFilter() {
+    BitbucketCause cause = EasyMock.createMock(BitbucketCause.class);
+    EasyMock.expect(cause.getTargetBranch()).andReturn("master-branch").anyTimes();
+    EasyMock.replay(cause);
+    
+    for(String f : new String[] {"master-branch", "r:^master", "r:branch$", " master-branch "}) {
+      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      assertTrue(filter.approved(cause));
+    }
+    
+    for(String f : new String[] {"develop", "feature-good-thing", "r:develop$"}) {
+      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      assertFalse(filter.approved(cause));
+    }
+  }
+  
+  @Test
+  @WithoutJenkins
+  public void rxSourceDestCheck() {    
+    for(String f : new String[] {"", "master", "r:master", "*"})      
+      assertFalse(Pattern.compile("(s:)|(d:)").matcher(f).find());
+    
+    for(String f : new String[] {"s:master d:feature-master", "s:master d:r:^feature", "s:r:^master d:r:^feature"})
+      assertTrue(Pattern.compile("(s:)|(d:)").matcher(f).find());
+  }
+  
+  @Test
+  @WithoutJenkins
+  public void sourceAndDestFilter() {
+    BitbucketCause cause = EasyMock.createMock(BitbucketCause.class);
+    EasyMock.expect(cause.getTargetBranch()).andReturn("master").anyTimes();
+    EasyMock.expect(cause.getSourceBranch()).andReturn("feature-for-master").anyTimes();
+    EasyMock.replay(cause);
+    
+    for(String f : new String[] {"s:feature-for-master d:master", "s:r:^feature d:master", "s:feature-for-master d:r:^m", "s:r:^feature d:r:^master"}) {
+      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      assertTrue(filter.approved(cause));
+    }
+    
+    for(String f : new String[] {"s:feature-for-master d:foo", "s:bar d:master", "s:foo d:bar"}) {
+      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      assertFalse(filter.approved(cause));
+    }
+  }
+  
+  @Test
+  @WithoutJenkins
+  public void multipleSrcDestFilter() {
+    BitbucketCause cause = EasyMock.createMock(BitbucketCause.class);
+    EasyMock.expect(cause.getTargetBranch()).andReturn("master").anyTimes();
+    EasyMock.expect(cause.getSourceBranch()).andReturn("feature-master").anyTimes();
+    EasyMock.replay(cause);
+    
+    for(String f : new String[] {"s: d:", "s:r:^feature s:good-branch d:r:.*", "s:good-branch s:feature-master d:r:.*", "s: d:r:.*", "d:master d:foo d:bar s:"}) {
+      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      assertTrue(filter.approved(cause));
+    }
+    
+    for(String f : new String[] {"d:ggg d:ooo d:333 s:feature-master", "s:111 s:222 s:333 d:master"}) {
+      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      assertFalse(filter.approved(cause));
+    }
+  }
+  
+  @Test
+  @WithoutJenkins
+  public void sourceAndDestPartiallyFilter() {
+    BitbucketCause cause = EasyMock.createMock(BitbucketCause.class);
+    EasyMock.expect(cause.getTargetBranch()).andReturn("master").anyTimes();
+    EasyMock.expect(cause.getSourceBranch()).andReturn("feature-master").anyTimes();
+    EasyMock.replay(cause);
+    
+    for(String f : new String[] {"s:feature-master d:", "d:master s:"}) {
+      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      assertTrue(filter.approved(cause));
+    }
+    
+    for(String f : new String[] {"s:feature-master", "d:master"}) {
+      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      assertFalse(filter.approved(cause));
+    }
+  }
+  
+  @Test
+  @WithoutJenkins
+  public void emptyGitSCMFilter() {
+    BitbucketCause cause = EasyMock.createMock(BitbucketCause.class);
+    EasyMock.expect(cause.getTargetBranch()).andReturn("master").anyTimes();
+    EasyMock.replay(cause);
+    
+    assertTrue(BitbucketBuildFilter.FilterFromGitSCMSource(null, "").isEmpty());
+    assertEquals("default", BitbucketBuildFilter.FilterFromGitSCMSource(null, "default"));
+    
+    assertTrue(BitbucketBuildFilter.InstanceByString(
+      BitbucketBuildFilter.FilterFromGitSCMSource(null, "")).approved(cause)
+    );
+  }
+  
+  @Test
+  @WithoutJenkins
+  public void fromGitSCMFilter() {
+    AbstractGitSCMSource git = EasyMock.createMock(AbstractGitSCMSource.class);
+    EasyMock.expect(git.getIncludes())
+      .andReturn("").times(1)
+      .andReturn("").times(1)      
+      .andReturn("*/master */feature-branch").times(1)      
+      .andReturn("*/master").anyTimes();
+    EasyMock.replay(git);
+    
+    assertTrue(git.getIncludes().isEmpty());    
+    assertEquals("", BitbucketBuildFilter.FilterFromGitSCMSource(git, ""));
+    assertEquals("d:master d:feature-branch", BitbucketBuildFilter.FilterFromGitSCMSource(git, ""));
+    assertEquals("d:master", BitbucketBuildFilter.FilterFromGitSCMSource(git, ""));
+  }
+}

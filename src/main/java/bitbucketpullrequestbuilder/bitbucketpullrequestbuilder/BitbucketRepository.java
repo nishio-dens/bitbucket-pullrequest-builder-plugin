@@ -10,7 +10,10 @@ import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClie
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BuildState;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import jenkins.model.Jenkins;
+import jenkins.scm.api.SCMSource;
 
 /**
  * Created by nishio
@@ -19,6 +22,7 @@ public class BitbucketRepository {
     private static final Logger logger = Logger.getLogger(BitbucketRepository.class.getName());
     private static final String BUILD_DESCRIPTION = "%s: %s into %s";
     private static final String BUILD_REQUEST_MARKER = "test this please";
+    private static final String BUILD_REQUEST_MARKER_COUNTER_RX = "\\[(\\d+)]\\";
 
     private String projectPath;
     private BitbucketPullRequestsBuilder builder;
@@ -99,6 +103,11 @@ public class BitbucketRepository {
         this.client.postPullRequestApproval(pullRequestId);
     }
 
+    private Integer extractRebuildTimesFromComment(String content) {
+      Matcher matcher = Pattern.compile(BUILD_REQUEST_MARKER_COUNTER_RX).matcher(content);
+      return matcher.groupCount() >= 1 ? Integer.parseInt(matcher.group(1)) : 0;
+    }
+    
     private boolean isBuildTarget(Pullrequest pullRequest) {
         if (pullRequest.getState() != null && pullRequest.getState().equals("OPEN")) {
             if (isSkipBuild(pullRequest.getTitle()) || !isFilteredBuild(pullRequest)) {
@@ -178,7 +187,11 @@ public class BitbucketRepository {
           pullRequest.getSource().getCommit().getHash(),
           pullRequest.getDestination().getCommit().getHash()
         );
-        BitbucketBuildFilter filter = new BitbucketBuildFilter(this.trigger.getBranchesFilter());
+        
+        BitbucketBuildFilter filter = !this.trigger.getBranchesFilterBySCMIncludes() ? 
+          BitbucketBuildFilter.InstanceByString(this.trigger.getBranchesFilter()) :
+          BitbucketBuildFilter.InstanceBySCM(Jenkins.getInstance().getExtensionList(SCMSource.class), this.trigger.getBranchesFilter());
+        
         return filter.approved(cause);
     }
 }

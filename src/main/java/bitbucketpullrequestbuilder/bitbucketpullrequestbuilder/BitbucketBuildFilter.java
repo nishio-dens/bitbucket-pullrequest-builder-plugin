@@ -1,9 +1,9 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
-import hudson.ExtensionList;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -169,12 +169,15 @@ public class BitbucketBuildFilter {
     return filter.trim();
   }
   
-  public static BitbucketBuildFilter InstanceBySCM(ExtensionList<SCMSource> scmSources, String defaultFilter) {      
-    logger.log(Level.FINE, "Filter instance by using SCM");
+  public static BitbucketBuildFilter InstanceBySCM(Collection<SCMSource> scmSources, String defaultFilter) {      
+    logger.log(Level.INFO, "Filter instance by using SCMSources list with {0} items", scmSources.size());
     AbstractGitSCMSource gitscm = null;
     for(SCMSource scm : scmSources) {
-      gitscm = (AbstractGitSCMSource)scm;
-      if (gitscm != null) break;
+      logger.log(Level.INFO, "Check {0} SCMSource ", scm.getClass());
+      if (scm instanceof AbstractGitSCMSource) {
+        gitscm = (AbstractGitSCMSource)scm;
+        break;
+      }
     }    
     return new BitbucketBuildFilter(FilterFromGitSCMSource(gitscm, defaultFilter));
   }

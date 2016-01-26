@@ -16,6 +16,9 @@ import java.util.logging.Logger;
 
 import jenkins.model.Jenkins;
 import hudson.ProxyConfiguration;
+import org.apache.commons.httpclient.methods.PutMethod;
+import org.apache.commons.httpclient.params.HttpMethodParams;
+import org.apache.commons.httpclient.util.EncodingUtil;
 
 /**
  * Created by nishio
@@ -56,15 +59,27 @@ public class ApiClient {
         }
         return Collections.EMPTY_LIST;
     }
+    
+    public String getName() {
+      return this.name;
+    }
+    
+    private String computeAPIKey(String keyExPart) {
+      return String.format(COMPUTED_KEY_FORMAT, this.key, keyExPart);
+    }
+    
+    public String buildStatusKey(String bsKey) {
+      return this.computeAPIKey(bsKey);
+    }
 
     public boolean hasBuildStatus(String owner, String repositoryName, String revision, String keyEx) {
-        String url = v2(owner, repositoryName, "/commit/" + revision + "/statuses/build/" + String.format(COMPUTED_KEY_FORMAT, this.key, keyEx));
+        String url = v2(owner, repositoryName, "/commit/" + revision + "/statuses/build/" + this.computeAPIKey(keyEx));
         return get(url).contains("\"state\"");
     }
 
     public void setBuildStatus(String owner, String repositoryName, String revision, BuildState state, String buildUrl, String comment, String keyEx) {
         String url = v2(owner, repositoryName, "/commit/" + revision + "/statuses/build");
-        String computedKey = String.format(COMPUTED_KEY_FORMAT, this.key, keyEx);
+        String computedKey = this.computeAPIKey(keyEx);
         NameValuePair[] data = new NameValuePair[]{
                 new NameValuePair("description", comment),
                 new NameValuePair("key", computedKey),
@@ -81,8 +96,15 @@ public class ApiClient {
         delete(v2("/pullrequests/" + pullRequestId + "/approve"));
     }
     
-    public void deleteComment(String pullRequestId, String commentId) {
-        delete(v1("/pullrequests/" + pullRequestId + "/comments/" + commentId + "/"));
+    public void deletePullRequestComment(String pullRequestId, String commentId) {
+        delete(v1("/pullrequests/" + pullRequestId + "/comments/" + commentId));
+    }
+    
+    public void updatePullRequestComment(String pullRequestId, String content, String commentId) {
+        NameValuePair[] data = new NameValuePair[] {
+                new NameValuePair("content", content),
+        };
+        put(v1("/pullrequests/" + pullRequestId + "/comments/" + commentId), data);
     }
 
     public Pullrequest.Participant postPullRequestApproval(String pullRequestId) {
@@ -90,6 +112,19 @@ public class ApiClient {
             return parse(post(v2("/pullrequests/" + pullRequestId + "/approve"),
                 new NameValuePair[]{}), Pullrequest.Participant.class);
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    
+    public Pullrequest.Comment postPullRequestComment(String pullRequestId, String content) {
+        NameValuePair[] data = new NameValuePair[] {
+                new NameValuePair("content", content),
+        };
+        try {
+            return parse(post(v1("/pullrequests/" + pullRequestId + "/comments"), data), new TypeReference<Pullrequest.Comment>() {});
+        } catch(Exception e) {
+            logger.log(Level.WARNING, "Invalid pull request comment response.", e);
             e.printStackTrace();
         }
         return null;
@@ -141,6 +176,13 @@ public class ApiClient {
 
     private void delete(String path) {
          send(new DeleteMethod(path));
+    }
+    
+    private void put(String path, NameValuePair[] data) {
+        PutMethod req = new PutMethod(path);
+        req.setRequestBody(EncodingUtil.formUrlEncode(data, "utf-8"));
+        req.getParams().setContentCharset("utf-8");
+        send(req);
     }
 
     private String send(HttpMethodBase req) {

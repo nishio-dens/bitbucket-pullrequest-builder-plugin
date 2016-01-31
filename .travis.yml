@@ -1,0 +1,11 @@
+language: java
+
+jdk:
+  - openjdk7
+  - oraclejdk7
+
+script:
+  mvn install -U
+
+after_failure:
+  - cat target/surefire-reports/*.txt

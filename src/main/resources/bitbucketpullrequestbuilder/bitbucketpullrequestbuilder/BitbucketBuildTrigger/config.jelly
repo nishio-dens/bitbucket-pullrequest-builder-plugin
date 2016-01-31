@@ -14,6 +14,12 @@
   <f:entry title="RepositoryName" field="repositoryName">
     <f:textbox />
   </f:entry>
+  <f:entry title="BranchesFilter" field="branchesFilter">
+    <f:textbox />
+  </f:entry>
+  <f:entry title="Using Git SCM 'Branches to build' option to filter pull requests?" field="branchesFilterBySCMIncludes">
+    <f:checkbox />
+  </f:entry>
   <f:entry title="CI Identifier" field="ciKey">
     <f:textbox default="jenkins" />
   </f:entry>

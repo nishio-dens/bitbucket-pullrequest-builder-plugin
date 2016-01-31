@@ -3,15 +3,15 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>1.509.4</version><!-- which version of Jenkins is this plugin built against? -->
+    <version>1.509.4</version><!-- which version of Jenkins is this plugin built against? -->         
   </parent>
 
   <artifactId>bitbucket-pullrequest-builder</artifactId>
   <name>Bitbucket Pullrequest Builder Plugin</name>
-  <version>1.4.9-SNAPSHOT</version>
+  <version>1.4.13</version>
   <description>This Jenkins plugin builds pull requests from Bitbucket.org and will report the test results.</description>
   <packaging>hpi</packaging>
-  <url>https://wiki.jenkins-ci.org/display/JENKINS/Bitbucket+pullrequest+builder+plugin</url>
+  <url>https://wiki.jenkins-ci.org/display/JENKINS/Bitbucket+pullrequest+builder+plugin</url>    
 
   <scm>
     <connection>scm:git:ssh://git@github.com/jenkinsci/bitbucket-pullrequest-builder-plugin.git</connection>
@@ -25,10 +25,10 @@
       <name>nishio_dens</name>
       <email>nishio@densan-labs.net</email>
     </developer>
-  </developers>
-
+  </developers>  
+    
   <!-- get every artifact through repo.jenkins-ci.org, which proxies all the artifacts that we need -->
-  <repositories>
+    <repositories>
     <repository>
       <id>repo.jenkins-ci.org</id>
       <url>http://repo.jenkins-ci.org/public/</url>
@@ -60,6 +60,17 @@
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>git</artifactId>
       <version>2.2.4</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>14.0-rc3</version>
+    </dependency>
+    <dependency>
+      <groupId>org.easymock</groupId>
+      <artifactId>easymock</artifactId>
+      <version>3.4</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 

@@ -2,9 +2,11 @@ package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
 import hudson.model.AbstractProject;
+import java.security.MessageDigest;
 
 import java.util.Collection;
 import java.util.logging.Logger;
+import org.apache.commons.codec.binary.Hex;
 
 /**
  * Created by nishio
@@ -50,6 +52,16 @@ public class BitbucketPullRequestsBuilder {
 
     public AbstractProject<?, ?> getProject() {
         return this.project;
+    }        
+    
+    public String getProjectId() {
+      try {
+        final MessageDigest MD5 = MessageDigest.getInstance("MD5");
+        return new String(Hex.encodeHex(MD5.digest(this.project.getFullName().getBytes("UTF-8"))));
+      } catch (Exception exc) {
+        logger.severe(exc.toString());
+      }
+      return this.project.getFullName();
     }
 
     public BitbucketBuildTrigger getTrigger() {

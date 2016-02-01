@@ -1,12 +1,17 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
 import antlr.ANTLRException;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 import hudson.Extension;
 import hudson.model.*;
 import hudson.model.queue.QueueTaskFuture;
 import hudson.plugins.git.RevisionParameterAction;
 import hudson.triggers.Trigger;
 import hudson.triggers.TriggerDescriptor;
+import hudson.util.ListBoxModel;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
@@ -17,6 +22,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
+
 /**
  * Created by nishio
  */
@@ -24,6 +31,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     private static final Logger logger = Logger.getLogger(BitbucketBuildTrigger.class.getName());
     private final String projectPath;
     private final String cron;
+    private final String credentialsId;
     private final String username;
     private final String password;
     private final String repositoryOwner;
@@ -45,6 +53,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     public BitbucketBuildTrigger(
             String projectPath,
             String cron,
+            String credentialsId,
             String username,
             String password,
             String repositoryOwner,
@@ -60,6 +69,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         super(cron);
         this.projectPath = projectPath;
         this.cron = cron;
+        this.credentialsId = credentialsId;
         this.username = username;
         this.password = password;
         this.repositoryOwner = repositoryOwner;
@@ -79,6 +89,10 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     public String getCron() {
         return this.cron;
+    }
+
+    public String getCredentialsId() {
+        return credentialsId;
     }
 
     public String getUsername() {
@@ -207,6 +221,13 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
             save();
             return super.configure(req, json);
+        }
+
+        public ListBoxModel doFillCredentialsIdItems() {
+            return new StandardListBoxModel()
+                    .withEmptySelection()
+                    .withMatching(instanceOf(UsernamePasswordCredentials.class),
+                            CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class));
         }
     }
 }

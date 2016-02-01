@@ -17,7 +17,6 @@ import java.util.logging.Logger;
 import jenkins.model.Jenkins;
 import hudson.ProxyConfiguration;
 import org.apache.commons.httpclient.methods.PutMethod;
-import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.httpclient.util.EncodingUtil;
 
 /**
@@ -33,13 +32,55 @@ public class ApiClient {
     private Credentials credentials;
     private String key;
     private String name;
+    private HttpClientFactory factory;
 
-    public ApiClient(String username, String password, String owner, String repositoryName, String key, String name) {
+    public static class HttpClientFactory {    
+        public static final HttpClientFactory INSTANCE = new HttpClientFactory(); 
+        
+        public HttpClient getInstanceHttpClient() {
+            HttpClient client = new HttpClient();
+            if (Jenkins.getInstance() == null) return client;
+
+            ProxyConfiguration proxy = Jenkins.getInstance().proxy;
+            if (proxy == null) return client;
+
+            logger.log(Level.INFO, "Jenkins proxy: {0}:{1}", new Object[]{ proxy.name, proxy.port });
+            client.getHostConfiguration().setProxy(proxy.name, proxy.port);
+            String username = proxy.getUserName();
+            String password = proxy.getPassword();
+
+            // Consider it to be passed if username specified. Sufficient?
+            if (username != null && !"".equals(username.trim())) {
+                logger.log(Level.INFO, "Using proxy authentication (user={0})", username);
+                client.getState().setProxyCredentials(AuthScope.ANY,
+                    new UsernamePasswordCredentials(username, password));
+            }
+            
+            return client;
+        }
+    }
+    
+    public <T extends HttpClientFactory> ApiClient(
+        String username, String password, 
+        String owner, String repositoryName, 
+        String key, String name, 
+        Class<T> httpFactory
+    ) {
         this.credentials = new UsernamePasswordCredentials(username, password);
         this.owner = owner;
         this.repositoryName = repositoryName;
         this.key = key;
         this.name = name;
+        
+        try {
+            this.factory = (httpFactory != null) ? httpFactory.newInstance() : HttpClientFactory.INSTANCE;
+        } catch(InstantiationException e) {
+            logger.log(Level.WARNING, "failed new instance of {0}: {1} ", new Object[] { httpFactory.getName(), e });
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            logger.log(Level.WARNING, "failed new instance of {0}: {1} ", new Object[] { httpFactory.getName(), e });
+            e.printStackTrace();
+      }
     }
 
     public List<Pullrequest> getPullRequests() {
@@ -47,6 +88,7 @@ public class ApiClient {
             return parse(get(v2("/pullrequests/")), Pullrequest.Response.class).getPullrequests();
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
+            e.printStackTrace();
         }
         return Collections.EMPTY_LIST;
     }
@@ -56,6 +98,7 @@ public class ApiClient {
             return parse(get(v1("/pullrequests/" + pullRequestId + "/comments")), new TypeReference<List<Pullrequest.Comment>>() {});
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
+            e.printStackTrace();
         }
         return Collections.EMPTY_LIST;
     }
@@ -112,6 +155,7 @@ public class ApiClient {
             return parse(post(v2("/pullrequests/" + pullRequestId + "/approve"),
                 new NameValuePair[]{}), Pullrequest.Participant.class);
         } catch (IOException e) {
+            logger.log(Level.WARNING, "Invalid pull request approval response.", e);
             e.printStackTrace();
         }
         return null;
@@ -131,24 +175,7 @@ public class ApiClient {
     }
 
     private HttpClient getHttpClient() {
-        HttpClient client = new HttpClient();
-        if (Jenkins.getInstance() == null) return client;
-
-        ProxyConfiguration proxy = Jenkins.getInstance().proxy;
-        if (proxy == null) return client;
-
-        logger.info("Jenkins proxy: " + proxy.name + ":" + proxy.port);
-        client.getHostConfiguration().setProxy(proxy.name, proxy.port);
-        String username = proxy.getUserName();
-        String password = proxy.getPassword();
-
-        // Consider it to be passed if username specified. Sufficient?
-        if (username != null && !"".equals(username.trim())) {
-            logger.info("Using proxy authentication (user=" + username + ")");
-            client.getState().setProxyCredentials(AuthScope.ANY,
-                new UsernamePasswordCredentials(username, password));
-        }
-        return client;
+        return this.factory.getInstanceHttpClient();
     }
 
     private String v1(String url) {
@@ -193,8 +220,10 @@ public class ApiClient {
             client.executeMethod(req);
             return req.getResponseBodyAsString();
         } catch (HttpException e) {
+            logger.log(Level.WARNING, "Failed to send request.", e);
             e.printStackTrace();
         } catch (IOException e) {
+            logger.log(Level.WARNING, "Failed to send request.", e);
             e.printStackTrace();
         }
         return null;

@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketBuildFilter;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketCause;
@@ -10,9 +5,7 @@ import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketPullRequ
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketRepository;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -25,8 +18,7 @@ import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.WithoutJenkins;
 
 /**
- *
- * @author maxvodo
+ * Tests
  */
 public class BitbucketBuildFilterTest {
   
@@ -287,25 +279,5 @@ public class BitbucketBuildFilterTest {
     String myBuildKey = "902f259e962ff16100843123480a0970";
     for(Pullrequest.Comment comment : comments)
       assertFalse(repo.hasMyBuildTagInTTPComment(comment.getContent(), myBuildKey));
-  }
-  
-  //@Test
-  @WithoutJenkins
-  public void ttpCommentTest() {    
-    ApiClient client = EasyMock.createNiceMock(ApiClient.class);
-    Collection<List<Pullrequest>> prs = new LinkedList<List<Pullrequest>>();
-    
-    prs.add(Arrays.asList(new Pullrequest[] {
-      new Pullrequest()
-    }));
-    
-    for(List<Pullrequest> pr : prs) EasyMock.expect(client.getPullRequests()).andReturn(pr).times(1);
-    BitbucketPullRequestsBuilder builder = EasyMock.createMock(BitbucketPullRequestsBuilder.class);
-    EasyMock.replay(client, builder);
-    
-    BitbucketRepository repo = new BitbucketRepository("", builder);
-    repo.init(client);
-    
-    Collection<Pullrequest> targetPRs = repo.getTargetPullRequests();
   }
 }

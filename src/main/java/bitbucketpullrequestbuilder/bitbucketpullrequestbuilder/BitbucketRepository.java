@@ -12,12 +12,20 @@ import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullreq
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
+
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
+
 import java.util.regex.Pattern;
 import jenkins.model.Jenkins;
 import jenkins.scm.api.SCMSource;
 import jenkins.scm.api.SCMSourceOwner;
 import jenkins.scm.api.SCMSourceOwners;
 import org.apache.commons.lang.StringUtils;
+
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
 
 /**
  * Created by nishio
@@ -46,9 +54,16 @@ public class BitbucketRepository {
     
     public void init(ApiClient client) {
         this.trigger = this.builder.getTrigger();
+        String username = trigger.getUsername();
+        String password = trigger.getPassword();
+        StandardUsernamePasswordCredentials credentials = getCredentials(trigger.getCredentialsId());
+        if (credentials != null) {
+            username = credentials.getUsername();
+            password = credentials.getPassword().getPlainText();
+        }
         this.client = (client == null) ? new ApiClient(
-                trigger.getUsername(),
-                trigger.getPassword(),
+                username,
+                password,
                 trigger.getRepositoryOwner(),
                 trigger.getRepositoryName(),
                 trigger.getCiKey(),
@@ -266,5 +281,13 @@ public class BitbucketRepository {
           BitbucketBuildFilter.InstanceBySCM(sources, this.trigger.getBranchesFilter());
         
         return filter.approved(cause);
+	}
+
+    private StandardUsernamePasswordCredentials getCredentials(String credentialsId) {
+        return CredentialsMatchers
+                .firstOrNull(
+                        CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class),
+                        CredentialsMatchers.allOf(CredentialsMatchers.withId(credentialsId),
+                                instanceOf(UsernamePasswordCredentials.class)));
     }
 }

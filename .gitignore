@@ -2,3 +2,6 @@ target
 *.iml
 .idea
 dependency-reduced-pom.xml
+bitbucket-pullrequest-builder.iml
+target/
+work

@@ -2,10 +2,15 @@ package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
 import hudson.model.AbstractProject;
+
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import java.util.Collection;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.apache.commons.codec.binary.Hex;
 
 /**
@@ -54,12 +59,20 @@ public class BitbucketPullRequestsBuilder {
         return this.project;
     }        
     
+    /**
+     * Return MD5 hashed full project name or full project name, if MD5 hash provider inaccessible
+     * @return unique project id
+     */
     public String getProjectId() {
       try {
         final MessageDigest MD5 = MessageDigest.getInstance("MD5");
         return new String(Hex.encodeHex(MD5.digest(this.project.getFullName().getBytes("UTF-8"))));
-      } catch (Exception exc) {
-        logger.severe(exc.toString());
+      } catch (NoSuchAlgorithmException exc) {
+        logger.log(Level.WARNING, "Failed to produce hash", exc);
+        exc.printStackTrace();
+      } catch (UnsupportedEncodingException exc) {
+        logger.log(Level.WARNING, "Failed to produce hash", exc);
+        exc.printStackTrace();
       }
       return this.project.getFullName();
     }

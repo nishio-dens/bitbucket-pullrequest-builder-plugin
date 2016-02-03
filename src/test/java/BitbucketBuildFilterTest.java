@@ -5,17 +5,20 @@ import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketPullRequ
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketRepository;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
+
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
+
 import jenkins.plugins.git.AbstractGitSCMSource;
-import org.easymock.*;
-import org.junit.Test;
-import static org.junit.Assert.*;
-import org.junit.Rule;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.WithoutJenkins;
+
+import org.easymock.*;
+import org.junit.Test;
+import org.junit.Rule;
+import static org.junit.Assert.*;
 
 /**
  * Tests

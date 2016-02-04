@@ -71,23 +71,14 @@ public class ApiClient {
         String username, String password, 
         String owner, String repositoryName, 
         String key, String name, 
-        Class<T> httpFactory
+        T httpFactory
     ) {
         this.credentials = new UsernamePasswordCredentials(username, password);
         this.owner = owner;
         this.repositoryName = repositoryName;
         this.key = key;
-        this.name = name;
-        
-        try {
-            this.factory = (httpFactory != null) ? httpFactory.newInstance() : HttpClientFactory.INSTANCE;
-        } catch(InstantiationException e) {
-            logger.log(Level.WARNING, "failed new instance of {0}: {1} ", new Object[] { httpFactory.getName(), e });
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            logger.log(Level.WARNING, "failed new instance of {0}: {1} ", new Object[] { httpFactory.getName(), e });
-            e.printStackTrace();
-      }
+        this.name = name;        
+        this.factory = httpFactory != null ? httpFactory : HttpClientFactory.INSTANCE;
     }
 
     public List<Pullrequest> getPullRequests() {

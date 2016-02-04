@@ -54,7 +54,7 @@ public class BitbucketRepository {
         this.init(null, null);
     }
     
-    public <T extends ApiClient.HttpClientFactory> void init(Class<T> httpFactory) {
+    public <T extends ApiClient.HttpClientFactory> void init(T httpFactory) {
         this.init(null, httpFactory);
     }
     
@@ -62,7 +62,7 @@ public class BitbucketRepository {
         this.init(client, null);
     }
     
-    public <T extends ApiClient.HttpClientFactory> void init(ApiClient client, Class<T> httpFactory) {
+    public <T extends ApiClient.HttpClientFactory> void init(ApiClient client, T httpFactory) {
         this.trigger = this.builder.getTrigger();
         
         if (client == null) {                      

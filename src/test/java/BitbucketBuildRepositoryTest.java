@@ -20,6 +20,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.logging.Logger;
 import org.easymock.*;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -47,6 +48,7 @@ interface ICredentialsInterceptor {
  * @param <T> 
  */
 class HttpClientInterceptor<T extends ICredentialsInterceptor> extends HttpClient {  
+  private static final Logger logger = Logger.getLogger(HttpClientInterceptor.class.getName());
   
   class CredentialsInterceptor<T extends ICredentialsInterceptor> extends HttpState {
     private final T interceptor;
@@ -54,6 +56,7 @@ class HttpClientInterceptor<T extends ICredentialsInterceptor> extends HttpClien
     
     @Override
     public synchronized void setCredentials(AuthScope authscope, Credentials credentials) {      
+      logger.info("Inject setCredentials");
       super.setCredentials(authscope, credentials);
       this.interceptor.assertCredentials(credentials);
       throw new AssertionError();
@@ -73,10 +76,13 @@ class HttpClientInterceptor<T extends ICredentialsInterceptor> extends HttpClien
  * @author maxvodo
  */
 class AssertCredentials implements ICredentialsInterceptor {
+  private static final Logger logger = Logger.getLogger(AssertCredentials.class.getName());
+  
   private final Credentials expected;
   public AssertCredentials(Credentials expected) { this.expected = expected; }
 
   public void assertCredentials(Credentials actual) {
+    logger.info("Assert credential");
     if (actual == null) assertTrue(this.expected == null); 
                    else assertTrue(this.expected != null);        
 
@@ -119,14 +125,14 @@ public class BitbucketBuildRepositoryTest {
     EasyMock.expect(builder.getTrigger()).andReturn(trigger).anyTimes();
     EasyMock.replay(builder);
     
-    ApiClient.HttpClientFactory httpFactory = EasyMock.createMock(ApiClient.HttpClientFactory.class);
+    ApiClient.HttpClientFactory httpFactory = EasyMock.createNiceMock(ApiClient.HttpClientFactory.class);
     EasyMock.expect(httpFactory.getInstanceHttpClient()).andReturn(
       new HttpClientInterceptor(new AssertCredentials(new UsernamePasswordCredentials("foo", "bar")))
     ).anyTimes();
     EasyMock.replay(httpFactory);            
     
     BitbucketRepository repo = new BitbucketRepository("", builder);
-    repo.init(httpFactory.getClass());
+    repo.init(httpFactory);
     
     try { repo.postPullRequestApproval("prId"); } catch(Error e) { assertTrue(e instanceof AssertionError); }
   }
@@ -155,14 +161,14 @@ public class BitbucketBuildRepositoryTest {
       CredentialsScope.GLOBAL, "JenkinsCID", "description", "username", "password"
     ));
     
-    ApiClient.HttpClientFactory httpFactory = EasyMock.createMock(ApiClient.HttpClientFactory.class);
+    ApiClient.HttpClientFactory httpFactory = EasyMock.createNiceMock(ApiClient.HttpClientFactory.class);
     EasyMock.expect(httpFactory.getInstanceHttpClient()).andReturn(
       new HttpClientInterceptor(new AssertCredentials(new UsernamePasswordCredentials("username", "password")))
     ).anyTimes();
     EasyMock.replay(httpFactory);  
     
     BitbucketRepository repo = new BitbucketRepository("", builder);
-    repo.init(httpFactory.getClass());        
+    repo.init(httpFactory);        
     
     try { repo.postPullRequestApproval("prId"); } catch(Error e) { assertTrue(e instanceof AssertionError); }                
   }
@@ -186,7 +192,6 @@ public class BitbucketBuildRepositoryTest {
   }
   
   @Test  
-  @WithoutJenkins
   public void repositoryProjectIdTest() throws ANTLRException, NoSuchAlgorithmException, UnsupportedEncodingException {
     BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
       "", "@hourly",
@@ -233,7 +238,6 @@ public class BitbucketBuildRepositoryTest {
   }
   
   @Test  
-  @WithoutJenkins
   public void triggerLongCIKeyTest() throws ANTLRException, NoSuchAlgorithmException {        
     BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
       "", "@hourly",

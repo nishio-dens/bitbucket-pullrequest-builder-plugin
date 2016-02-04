@@ -303,6 +303,7 @@ public class BitbucketRepository {
     }
 
     private StandardUsernamePasswordCredentials getCredentials(String credentialsId) {
+        if (null == credentialsId) return null;
         return CredentialsMatchers
                 .firstOrNull(
                         CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class),

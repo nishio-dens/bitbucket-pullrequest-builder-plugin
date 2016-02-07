@@ -16,8 +16,12 @@ import java.util.logging.Logger;
 
 import jenkins.model.Jenkins;
 import hudson.ProxyConfiguration;
+
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.httpclient.methods.PutMethod;
-import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.httpclient.util.EncodingUtil;
 
 /**
@@ -27,19 +31,54 @@ public class ApiClient {
     private static final Logger logger = Logger.getLogger(ApiClient.class.getName());
     private static final String V1_API_BASE_URL = "https://bitbucket.org/api/1.0/repositories/";
     private static final String V2_API_BASE_URL = "https://bitbucket.org/api/2.0/repositories/";
-    private static final String COMPUTED_KEY_FORMAT = "%s-%s";
+    private static final String COMPUTED_KEY_FORMAT = "%s-%s";    
     private String owner;
     private String repositoryName;
     private Credentials credentials;
     private String key;
     private String name;
+    private HttpClientFactory factory;
+    
+    public static final byte MAX_KEY_SIZE_BB_API = 40;
 
-    public ApiClient(String username, String password, String owner, String repositoryName, String key, String name) {
+    public static class HttpClientFactory {    
+        public static final HttpClientFactory INSTANCE = new HttpClientFactory(); 
+        
+        public HttpClient getInstanceHttpClient() {
+            HttpClient client = new HttpClient();
+            if (Jenkins.getInstance() == null) return client;
+
+            ProxyConfiguration proxy = Jenkins.getInstance().proxy;
+            if (proxy == null) return client;
+
+            logger.log(Level.INFO, "Jenkins proxy: {0}:{1}", new Object[]{ proxy.name, proxy.port });
+            client.getHostConfiguration().setProxy(proxy.name, proxy.port);
+            String username = proxy.getUserName();
+            String password = proxy.getPassword();
+
+            // Consider it to be passed if username specified. Sufficient?
+            if (username != null && !"".equals(username.trim())) {
+                logger.log(Level.INFO, "Using proxy authentication (user={0})", username);
+                client.getState().setProxyCredentials(AuthScope.ANY,
+                    new UsernamePasswordCredentials(username, password));
+            }
+            
+            return client;
+        }
+    }
+    
+    public <T extends HttpClientFactory> ApiClient(
+        String username, String password, 
+        String owner, String repositoryName, 
+        String key, String name, 
+        T httpFactory
+    ) {
         this.credentials = new UsernamePasswordCredentials(username, password);
         this.owner = owner;
         this.repositoryName = repositoryName;
         this.key = key;
-        this.name = name;
+        this.name = name;        
+        this.factory = httpFactory != null ? httpFactory : HttpClientFactory.INSTANCE;
     }
 
     public List<Pullrequest> getPullRequests() {
@@ -47,6 +86,7 @@ public class ApiClient {
             return parse(get(v2("/pullrequests/")), Pullrequest.Response.class).getPullrequests();
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
+            e.printStackTrace();
         }
         return Collections.EMPTY_LIST;
     }
@@ -56,6 +96,7 @@ public class ApiClient {
             return parse(get(v1("/pullrequests/" + pullRequestId + "/comments")), new TypeReference<List<Pullrequest.Comment>>() {});
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
+            e.printStackTrace();
         }
         return Collections.EMPTY_LIST;
     }
@@ -64,8 +105,29 @@ public class ApiClient {
       return this.name;
     }
     
+    private static MessageDigest SHA1 = null;
+    
+    /**
+     * Retrun 
+     * @param keyExPart
+     * @return key parameter for call BitBucket API 
+     */
     private String computeAPIKey(String keyExPart) {
-      return String.format(COMPUTED_KEY_FORMAT, this.key, keyExPart);
+      String computedKey = String.format(COMPUTED_KEY_FORMAT, this.key, keyExPart);
+      
+      if (computedKey.length() > MAX_KEY_SIZE_BB_API) {
+        try { 
+          if (SHA1 == null) SHA1 = MessageDigest.getInstance("SHA1"); 
+          return new String(Hex.encodeHex(SHA1.digest(computedKey.getBytes("UTF-8"))));
+        } catch(NoSuchAlgorithmException e) { 
+          logger.log(Level.WARNING, "Failed to create hash provider", e);
+          e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+          logger.log(Level.WARNING, "Failed to create hash provider", e);
+          e.printStackTrace();
+        }
+      }      
+      return (computedKey.length() <= MAX_KEY_SIZE_BB_API) ?  computedKey : computedKey.substring(0, MAX_KEY_SIZE_BB_API);
     }
     
     public String buildStatusKey(String bsKey) {
@@ -112,6 +174,7 @@ public class ApiClient {
             return parse(post(v2("/pullrequests/" + pullRequestId + "/approve"),
                 new NameValuePair[]{}), Pullrequest.Participant.class);
         } catch (IOException e) {
+            logger.log(Level.WARNING, "Invalid pull request approval response.", e);
             e.printStackTrace();
         }
         return null;
@@ -131,24 +194,7 @@ public class ApiClient {
     }
 
     private HttpClient getHttpClient() {
-        HttpClient client = new HttpClient();
-        if (Jenkins.getInstance() == null) return client;
-
-        ProxyConfiguration proxy = Jenkins.getInstance().proxy;
-        if (proxy == null) return client;
-
-        logger.info("Jenkins proxy: " + proxy.name + ":" + proxy.port);
-        client.getHostConfiguration().setProxy(proxy.name, proxy.port);
-        String username = proxy.getUserName();
-        String password = proxy.getPassword();
-
-        // Consider it to be passed if username specified. Sufficient?
-        if (username != null && !"".equals(username.trim())) {
-            logger.info("Using proxy authentication (user=" + username + ")");
-            client.getState().setProxyCredentials(AuthScope.ANY,
-                new UsernamePasswordCredentials(username, password));
-        }
-        return client;
+        return this.factory.getInstanceHttpClient();
     }
 
     private String v1(String url) {
@@ -193,8 +239,10 @@ public class ApiClient {
             client.executeMethod(req);
             return req.getResponseBodyAsString();
         } catch (HttpException e) {
+            logger.log(Level.WARNING, "Failed to send request.", e);
             e.printStackTrace();
         } catch (IOException e) {
+            logger.log(Level.WARNING, "Failed to send request.", e);
             e.printStackTrace();
         }
         return null;

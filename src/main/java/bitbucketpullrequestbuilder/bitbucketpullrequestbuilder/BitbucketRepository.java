@@ -9,15 +9,25 @@ import java.util.logging.Logger;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BuildState;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
+
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
+
 import jenkins.model.Jenkins;
 import jenkins.scm.api.SCMSource;
 import jenkins.scm.api.SCMSourceOwner;
 import jenkins.scm.api.SCMSourceOwners;
+
 import org.apache.commons.lang.StringUtils;
+
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
 
 /**
  * Created by nishio
@@ -34,26 +44,46 @@ public class BitbucketRepository {
     private BitbucketPullRequestsBuilder builder;
     private BitbucketBuildTrigger trigger;
     private ApiClient client;
-
+    
     public BitbucketRepository(String projectPath, BitbucketPullRequestsBuilder builder) {
         this.projectPath = projectPath;
         this.builder = builder;
     }
 
     public void init() {
-        this.init(null);
+        this.init(null, null);
+    }
+    
+    public <T extends ApiClient.HttpClientFactory> void init(T httpFactory) {
+        this.init(null, httpFactory);
     }
     
     public void init(ApiClient client) {
+        this.init(client, null);
+    }
+    
+    public <T extends ApiClient.HttpClientFactory> void init(ApiClient client, T httpFactory) {
         this.trigger = this.builder.getTrigger();
-        this.client = (client == null) ? new ApiClient(
-                trigger.getUsername(),
-                trigger.getPassword(),
+        
+        if (client == null) {                      
+            String username = trigger.getUsername();
+            String password = trigger.getPassword();            
+            StandardUsernamePasswordCredentials credentials = getCredentials(trigger.getCredentialsId());
+            if (credentials != null) {
+                username = credentials.getUsername();
+                password = credentials.getPassword().getPlainText();
+            }            
+            this.client = new ApiClient(
+                username,
+                password,
                 trigger.getRepositoryOwner(),
                 trigger.getRepositoryName(),
                 trigger.getCiKey(),
-                trigger.getCiName()
-        ) : client;
+                trigger.getCiName(),
+                httpFactory
+            );
+            
+        } else this.client = client;
     }
 
     public Collection<Pullrequest> getTargetPullRequests() {
@@ -66,6 +96,10 @@ public class BitbucketRepository {
             }
         }
         return targetPullRequests;
+    }
+    
+    public ApiClient getClient() {
+      return this.client;
     }
 
     public void addFutureBuildTasks(Collection<Pullrequest> pullRequests) {
@@ -266,5 +300,14 @@ public class BitbucketRepository {
           BitbucketBuildFilter.InstanceBySCM(sources, this.trigger.getBranchesFilter());
         
         return filter.approved(cause);
+    }
+
+    private StandardUsernamePasswordCredentials getCredentials(String credentialsId) {
+        if (null == credentialsId) return null;
+        return CredentialsMatchers
+                .firstOrNull(
+                        CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class),
+                        CredentialsMatchers.allOf(CredentialsMatchers.withId(credentialsId),
+                                instanceOf(UsernamePasswordCredentials.class)));
     }
 }

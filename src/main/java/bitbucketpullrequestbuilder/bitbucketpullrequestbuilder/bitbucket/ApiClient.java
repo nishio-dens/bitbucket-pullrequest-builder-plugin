@@ -244,6 +244,8 @@ public class ApiClient {
         } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to send request.", e);
             e.printStackTrace();
+        } finally {
+          req.releaseConnection();
         }
         return null;
     }

@@ -45,7 +45,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     private final boolean approveIfSuccess;
 
     transient private BitbucketPullRequestsBuilder bitbucketPullRequestsBuilder;
-
+    
     @Extension
     public static final BitbucketBuildTriggerDescriptor descriptor = new BitbucketBuildTriggerDescriptor();   
 

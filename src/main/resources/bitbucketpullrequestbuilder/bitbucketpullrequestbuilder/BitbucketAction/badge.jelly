@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+   <img title="Pull request #${it.pullRequestId} in ${it.repositoryOwner}/${it.repositoryName}"
+        src="${resURL}/plugin/bitbucket-pullrequest-builder/images/bitbucket-badge.png"/>
+</j:jelly>

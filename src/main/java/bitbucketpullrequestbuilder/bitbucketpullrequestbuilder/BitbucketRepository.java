@@ -28,6 +28,7 @@ import jenkins.scm.api.SCMSourceOwners;
 import org.apache.commons.lang.StringUtils;
 
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
+import java.util.UUID;
 
 /**
  * Created by nishio
@@ -44,10 +45,12 @@ public class BitbucketRepository {
     private BitbucketPullRequestsBuilder builder;
     private BitbucketBuildTrigger trigger;
     private ApiClient client;
+    private String keyPart;
     
     public BitbucketRepository(String projectPath, BitbucketPullRequestsBuilder builder) {
         this.projectPath = projectPath;
         this.builder = builder;
+        keyPart = UUID.randomUUID().toString().replace("-", "");
     }
 
     public void init() {
@@ -102,6 +105,10 @@ public class BitbucketRepository {
       return this.client;
     }
 
+    public String getKeyPart() {
+      return keyPart;
+    }
+
     public void addFutureBuildTasks(Collection<Pullrequest> pullRequests) {
         for(Pullrequest pullRequest : pullRequests) {
             if ( this.trigger.getApproveIfSuccess() ) {
@@ -136,7 +143,7 @@ public class BitbucketRepository {
             comment = String.format(BUILD_DESCRIPTION, builder.getProject().getDisplayName(), sourceCommit, destinationBranch);
         }
 
-        this.client.setBuildStatus(owner, repository, sourceCommit, state, buildUrl, comment, this.builder.getProjectId());
+        this.client.setBuildStatus(owner, repository, sourceCommit, state, buildUrl, comment, keyPart);
     }
 
     public void deletePullRequestApproval(String pullRequestId) {
@@ -222,15 +229,11 @@ public class BitbucketRepository {
             String owner = destination.getRepository().getOwnerName();
             String repositoryName = destination.getRepository().getRepositoryName();
 
-            Pullrequest.Repository sourceRepository = source.getRepository();
-            String buildKeyPart = this.builder.getProjectId();
-
-            final boolean commitAlreadyBeenProcessed = this.client.hasBuildStatus(
-              sourceRepository.getOwnerName(), sourceRepository.getRepositoryName(), sourceCommit, buildKeyPart
-            );
+            final boolean commitAlreadyBeenProcessed = this.builder.hasBuild(sourceCommit);
+            
             if (commitAlreadyBeenProcessed) logger.log(Level.INFO, 
-              "Commit {0}#{1} has already been processed", 
-              new Object[]{ sourceCommit, buildKeyPart }
+              "Commit {0} has already been processed", 
+              new Object[]{ sourceCommit }
             );
             
             final String id = pullRequest.getId();
@@ -248,11 +251,11 @@ public class BitbucketRepository {
                           new Object[]{ sourceCommit, comment.getId() }
                         );                        
                     }                                       
-                    rebuildCommentAvailable &= this.processTTPCommentBuildTags(content, buildKeyPart);
+                    rebuildCommentAvailable &= this.processTTPCommentBuildTags(content, keyPart);
                     if (!rebuildCommentAvailable) break;
                 }
             }            
-            if (rebuildCommentAvailable) this.postBuildTagInTTPComment(id, "TTP build flag", buildKeyPart);
+            if (rebuildCommentAvailable) this.postBuildTagInTTPComment(id, "TTP build flag", keyPart);
 
             final boolean canBuildTarget = rebuildCommentAvailable || !commitAlreadyBeenProcessed;
             logger.log(Level.INFO, "Build target? {0} [rebuild:{1} processed:{2}]", new Object[]{ canBuildTarget, rebuildCommentAvailable, commitAlreadyBeenProcessed});

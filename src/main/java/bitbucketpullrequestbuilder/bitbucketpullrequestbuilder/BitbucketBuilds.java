@@ -4,11 +4,9 @@ import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BuildSt
 import hudson.model.AbstractBuild;
 import hudson.model.Cause;
 import hudson.model.Result;
-import jenkins.model.Jenkins;
 
-import java.io.IOException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+import jenkins.model.JenkinsLocationConfiguration;
 
 /**
  * Created by nishio
@@ -36,11 +34,10 @@ public class BitbucketBuilds {
         if (cause == null) {
             return;
         }
-        try {
-            build.setDescription(cause.getShortDescription());
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Can't update build description", e);
-        }
+
+        build.addAction(new BitbucketAction(cause.getSourceCommitHash(),
+                cause.getPullRequestId(), trigger.getRepositoryOwner(),
+                trigger.getRepositoryName(), cause.getSourceBranch()));
     }
 
     public void onCompleted(AbstractBuild build) {
@@ -49,7 +46,8 @@ public class BitbucketBuilds {
             return;
         }
         Result result = build.getResult();
-        String rootUrl = Jenkins.getInstance().getRootUrl();
+        JenkinsLocationConfiguration globalConfig = new JenkinsLocationConfiguration();
+        String rootUrl = globalConfig.getUrl();
         String buildUrl = "";
         if (rootUrl == null) {
             logger.warning("PLEASE SET JENKINS ROOT URL IN GLOBAL CONFIGURATION FOR BUILD STATE REPORTING");

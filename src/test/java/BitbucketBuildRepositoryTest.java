@@ -29,7 +29,6 @@ import org.junit.Assert;
 import org.jvnet.hudson.test.JenkinsRule;
 
 import jenkins.model.Jenkins;
-import org.jvnet.hudson.test.WithoutJenkins;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.httpclient.Credentials;
@@ -218,53 +217,16 @@ public class BitbucketBuildRepositoryTest {
     };   
     
     Collection<String> hashedProjectIdsCollection = Collections2.transform(Arrays.asList(projectIds), new MD5HasherFunction(MD5));
-    String[] hashedPojectIds = hashedProjectIdsCollection.toArray(new String[hashedProjectIdsCollection.size()]);
-    
-    for(String projectId : hashedPojectIds) {
-      EasyMock.expect(builder.getProjectId()).andReturn(projectId).times(1);
-    }        
-    EasyMock.replay(builder);
-    
+
     BitbucketRepository repo = new BitbucketRepository("", builder);
     repo.init();       
     
     for(String projectId : projectIds) {
       String hashMD5 = new String(Hex.encodeHex(MD5.digest(projectId.getBytes("UTF-8"))));
-      String buildStatusKey = repo.getClient().buildStatusKey(builder.getProjectId());
+      String buildStatusKey = repo.getClient().buildStatusKey(repo.getKeyPart());
       
       assertTrue(buildStatusKey.length() <= ApiClient.MAX_KEY_SIZE_BB_API);
       assertEquals(buildStatusKey, "jenkins-" + hashMD5);
     }
-  }
-  
-  @Test  
-  public void triggerLongCIKeyTest() throws ANTLRException, NoSuchAlgorithmException {        
-    BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
-      "", "@hourly",
-      "JenkinsCID",
-      "foo",
-      "bar",
-      "", "",
-      "", true,
-      "jenkins-too-long-ci-key", "Jenkins", "",
-      true, 
-      true
-    );
-    
-    final MessageDigest MD5 = MessageDigest.getInstance("MD5");
-    final MessageDigest SHA1 = MessageDigest.getInstance("SHA1");
-    
-    BitbucketPullRequestsBuilder builder = EasyMock.createMock(BitbucketPullRequestsBuilder.class); 
-    EasyMock.expect(builder.getTrigger()).andReturn(trigger).anyTimes();
-    EasyMock.expect(builder.getProjectId()).andReturn((new MD5HasherFunction(MD5)).apply("projectId")).anyTimes();
-    EasyMock.replay(builder);       
-    
-    BitbucketRepository repo = new BitbucketRepository("", builder);
-    repo.init();
-    
-    String buildStatusKey = repo.getClient().buildStatusKey(builder.getProjectId());
-    assertTrue(buildStatusKey.length() <= ApiClient.MAX_KEY_SIZE_BB_API);
-    assertFalse(buildStatusKey.startsWith("jenkins-"));
-    assertEquals((new SHA1HasherFunction(SHA1)).apply("jenkins-too-long-ci-key" + "-" + builder.getProjectId()), buildStatusKey);
   }
 }

@@ -59,6 +59,11 @@ public class BitbucketCause extends Cause {
         return pullRequestId;
     }
 
+    public String getCompleteUrl() {
+        String url = BITBUCKET_URL + this.getDestinationRepositoryOwner() + "/";
+        url += this.getDestinationRepositoryName() + "/pull-request/" + this.getPullRequestId();
+        return url;
+    }
 
     public String getDestinationRepositoryOwner() {
         return destinationRepositoryOwner;
@@ -78,9 +83,6 @@ public class BitbucketCause extends Cause {
 
     @Override
     public String getShortDescription() {
-        String description = "<a href=\"" + BITBUCKET_URL + this.getDestinationRepositoryOwner() + "/";
-        description += this.getDestinationRepositoryName() + "/pull-request/" + this.getPullRequestId();
-        description += "\">#" + this.getPullRequestId() + " " + this.getPullRequestTitle() + "</a>";
-        return description;
+        return getCompleteUrl() + " #" + this.getPullRequestId() + " " + this.getPullRequestTitle();
     }
 }

@@ -164,6 +164,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     public QueueTaskFuture<?> startJob(BitbucketCause cause) {
         Map<String, ParameterValue> values = this.getDefaultParameters();
+        
         values.put("sourceBranch", new StringParameterValue("sourceBranch", cause.getSourceBranch()));
         values.put("targetBranch", new StringParameterValue("targetBranch", cause.getTargetBranch()));
         values.put("repositoryOwner", new StringParameterValue("repositoryOwner", cause.getRepositoryOwner()));
@@ -172,6 +173,8 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         values.put("destinationRepositoryOwner", new StringParameterValue("destinationRepositoryOwner", cause.getDestinationRepositoryOwner()));
         values.put("destinationRepositoryName", new StringParameterValue("destinationRepositoryName", cause.getDestinationRepositoryName()));
         values.put("pullRequestTitle", new StringParameterValue("pullRequestTitle", cause.getPullRequestTitle()));
+        values.put("pullRequestAuthor", new StringParameterValue("pullRequestAuthor", cause.getPullRequestAuthor()));
+        
         return this.job.scheduleBuild2(0, cause, new ParametersAction(new ArrayList(values.values())), new RevisionParameterAction(cause.getSourceCommitHash()));
     }
 

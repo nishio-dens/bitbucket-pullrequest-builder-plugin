@@ -117,7 +117,9 @@ public class BitbucketRepository {
                     pullRequest.getDestination().getRepository().getRepositoryName(),
                     pullRequest.getTitle(),
                     pullRequest.getSource().getCommit().getHash(),
-                    pullRequest.getDestination().getCommit().getHash());
+                    pullRequest.getDestination().getCommit().getHash(),
+                    pullRequest.getAuthor().getCombinedUsername()
+            );
             setBuildStatus(cause, BuildState.INPROGRESS, Jenkins.getInstance().getRootUrl());
             this.builder.getTrigger().startJob(cause);
         }
@@ -286,7 +288,8 @@ public class BitbucketRepository {
           pullRequest.getDestination().getRepository().getRepositoryName(),
           pullRequest.getTitle(),
           pullRequest.getSource().getCommit().getHash(),
-          pullRequest.getDestination().getCommit().getHash()
+          pullRequest.getDestination().getCommit().getHash(),
+          pullRequest.getAuthor().getCombinedUsername()
         );
         
         //@FIXME: Way to iterate over all available SCMSources

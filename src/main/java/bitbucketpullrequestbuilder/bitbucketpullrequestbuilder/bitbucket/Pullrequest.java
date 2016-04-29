@@ -28,6 +28,7 @@ public class Pullrequest {
     private String     updatedOn;
     private String     mergeCommit;
     private String     id;
+    private Author     author;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Response {
@@ -233,6 +234,33 @@ public class Pullrequest {
             this.createdOn = createdOn;
         }
     }
+    
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Author {
+      private String username;
+      private String display_name;
+      public static final String COMBINED_NAME = "%s <@%s>";
+      
+      public String getUsername() {
+          return username;
+      }
+      public void setUsername(String username) {
+          this.username = username;
+      }
+      
+      @JsonProperty("display_name")
+      public String getDisplayName() {
+          return display_name;
+      }
+      
+      @JsonProperty("display_name")
+      public void setDisplayName(String display_name) {
+          this.display_name = display_name;
+      }
+      public String getCombinedUsername() {
+        return String.format(COMBINED_NAME, this.getDisplayName(), this.getUsername());
+      }
+    }
 
     //-------------------- only getters and setters follow -----------------
 
@@ -340,6 +368,14 @@ public class Pullrequest {
 
     public void setId(String id) {
         this.id = id;
+    }
+    
+    public Author getAuthor() {
+      return this.author;
+    }
+    
+    public void setAutohor(Author author) {
+      this.author = author;
     }
 
 }

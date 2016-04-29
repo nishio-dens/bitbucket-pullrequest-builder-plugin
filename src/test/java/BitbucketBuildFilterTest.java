@@ -142,6 +142,26 @@ public class BitbucketBuildFilterTest {
   
   @Test
   @WithoutJenkins
+  public void authorFilter() {
+    BitbucketCause cause = EasyMock.createMock(BitbucketCause.class);
+    EasyMock.expect(cause.getTargetBranch()).andReturn("master").anyTimes();
+    EasyMock.expect(cause.getSourceBranch()).andReturn("feature-master").anyTimes();
+    EasyMock.expect(cause.getPullRequestAuthor()).andReturn("test").anyTimes();
+    EasyMock.replay(cause);
+    
+    for(String f : new String[] {"a:test", "a:r:^test", "d: s: a:", "a:", "a:foo a:test"}) {
+      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      assertTrue(filter.approved(cause));
+    }
+    
+    for(String f : new String[] {"s:feature-master", "d:master", "s:feature-master d: a:foo", "a:bar"}) {
+      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      assertFalse(filter.approved(cause));
+    }
+  }
+  
+  @Test
+  @WithoutJenkins
   public void emptyGitSCMFilter() {
     BitbucketCause cause = EasyMock.createMock(BitbucketCause.class);
     EasyMock.expect(cause.getTargetBranch()).andReturn("master").anyTimes();

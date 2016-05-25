@@ -16,6 +16,9 @@ import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -160,7 +163,20 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public QueueTaskFuture<?> startJob(BitbucketCause cause) {
-        return this.job.scheduleBuild2(0, cause, new RevisionParameterAction(cause.getSourceCommitHash()));
+        Map<String, ParameterValue> values = this.getDefaultParameters();
+        return this.job.scheduleBuild2(0, cause, new ParametersAction(new ArrayList(values.values())), new RevisionParameterAction(cause.getSourceCommitHash()));
+    }
+
+    private Map<String, ParameterValue> getDefaultParameters() {
+        Map<String, ParameterValue> values = new HashMap<String, ParameterValue>();
+        ParametersDefinitionProperty definitionProperty = this.job.getProperty(ParametersDefinitionProperty.class);
+
+        if (definitionProperty != null) {
+            for (ParameterDefinition definition : definitionProperty.getParameterDefinitions()) {
+                values.put(definition.getName(), definition.getDefaultParameterValue());
+            }
+        }
+        return values;
     }
 
     @Override

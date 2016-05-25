@@ -5,7 +5,6 @@ import hudson.Extension;
 import hudson.model.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 @Extension
 public class BitbucketAdditionalParameterEnvironmentContributor extends EnvironmentContributor {
@@ -17,8 +16,6 @@ public class BitbucketAdditionalParameterEnvironmentContributor extends Environm
         if (cause == null) {
             return;
         }
-
-        run.addAction(getDefaultParameters(run));
 
         putEnvVar(envVars, "sourceBranch", cause.getSourceBranch());
         putEnvVar(envVars, "targetBranch", cause.getTargetBranch());
@@ -40,14 +37,4 @@ public class BitbucketAdditionalParameterEnvironmentContributor extends Environm
         return actual == null ? d : actual;
     }
 
-    private ParametersAction getDefaultParameters(Run<?, ?> run) {
-        ArrayList<ParameterValue> values = new ArrayList<ParameterValue>();
-        ParametersDefinitionProperty definitionProperty = run.getParent().getProperty(ParametersDefinitionProperty.class);
-        if (definitionProperty != null) {
-            for (ParameterDefinition pd : definitionProperty.getParameterDefinitions()) {
-                values.add(pd.getDefaultParameterValue());
-            }
-        }
-        return new ParametersAction(values);
-    }
 }

@@ -31,19 +31,21 @@ public class ApiClient {
     private static final Logger logger = Logger.getLogger(ApiClient.class.getName());
     private static final String V1_API_BASE_URL = "https://bitbucket.org/api/1.0/repositories/";
     private static final String V2_API_BASE_URL = "https://bitbucket.org/api/2.0/repositories/";
-    private static final String COMPUTED_KEY_FORMAT = "%s-%s";    
+    private static final String COMPUTED_KEY_FORMAT = "%s-%s";
     private String owner;
     private String repositoryName;
+    private String bitbucketServerUrl;
     private Credentials credentials;
     private String key;
     private String name;
     private HttpClientFactory factory;
-    
+    private String pullRequestsPath;
+
     public static final byte MAX_KEY_SIZE_BB_API = 40;
 
-    public static class HttpClientFactory {    
-        public static final HttpClientFactory INSTANCE = new HttpClientFactory(); 
-        
+    public static class HttpClientFactory {
+        public static final HttpClientFactory INSTANCE = new HttpClientFactory();
+
         public HttpClient getInstanceHttpClient() {
             HttpClient client = new HttpClient();
             if (Jenkins.getInstance() == null) return client;
@@ -62,28 +64,31 @@ public class ApiClient {
                 client.getState().setProxyCredentials(AuthScope.ANY,
                     new UsernamePasswordCredentials(username, password));
             }
-            
+
             return client;
         }
     }
-    
+
     public <T extends HttpClientFactory> ApiClient(
-        String username, String password, 
-        String owner, String repositoryName, 
-        String key, String name, 
+        String username, String password,
+        String owner, String repositoryName,
+        String bitbucketServerUrl,
+        String key, String name,
         T httpFactory
     ) {
         this.credentials = new UsernamePasswordCredentials(username, password);
         this.owner = owner;
         this.repositoryName = repositoryName;
+        this.bitbucketServerUrl = bitbucketServerUrl;
         this.key = key;
-        this.name = name;        
+        this.name = name;
         this.factory = httpFactory != null ? httpFactory : HttpClientFactory.INSTANCE;
+        this.pullRequestsPath = (bitbucketServerUrl != null && !"".equals(bitbucketServerUrl.trim())) ? "/pull-requests/" : "/pullrequests/";
     }
 
     public List<Pullrequest> getPullRequests() {
         try {
-            return parse(get(v2("/pullrequests/")), Pullrequest.Response.class).getPullrequests();
+            return parse(get(v2(this.pullRequestsPath)), Pullrequest.Response.class).getPullrequests();
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
             e.printStackTrace();
@@ -93,43 +98,43 @@ public class ApiClient {
 
     public List<Pullrequest.Comment> getPullRequestComments(String commentOwnerName, String commentRepositoryName, String pullRequestId) {
         try {
-            return parse(get(v1("/pullrequests/" + pullRequestId + "/comments")), new TypeReference<List<Pullrequest.Comment>>() {});
+            return parse(get(v1(this.pullRequestsPath + pullRequestId + "/comments")), new TypeReference<List<Pullrequest.Comment>>() {});
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
             e.printStackTrace();
         }
         return Collections.EMPTY_LIST;
     }
-    
+
     public String getName() {
       return this.name;
     }
-    
+
     private static MessageDigest SHA1 = null;
-    
+
     /**
-     * Retrun 
+     * Retrun
      * @param keyExPart
-     * @return key parameter for call BitBucket API 
+     * @return key parameter for call BitBucket API
      */
     private String computeAPIKey(String keyExPart) {
       String computedKey = String.format(COMPUTED_KEY_FORMAT, this.key, keyExPart);
-      
+
       if (computedKey.length() > MAX_KEY_SIZE_BB_API) {
-        try { 
-          if (SHA1 == null) SHA1 = MessageDigest.getInstance("SHA1"); 
+        try {
+          if (SHA1 == null) SHA1 = MessageDigest.getInstance("SHA1");
           return new String(Hex.encodeHex(SHA1.digest(computedKey.getBytes("UTF-8"))));
-        } catch(NoSuchAlgorithmException e) { 
+        } catch(NoSuchAlgorithmException e) {
           logger.log(Level.WARNING, "Failed to create hash provider", e);
           e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
           logger.log(Level.WARNING, "Failed to create hash provider", e);
           e.printStackTrace();
         }
-      }      
+      }
       return (computedKey.length() <= MAX_KEY_SIZE_BB_API) ?  computedKey : computedKey.substring(0, MAX_KEY_SIZE_BB_API);
     }
-    
+
     public String buildStatusKey(String bsKey) {
       return this.computeAPIKey(bsKey);
     }
@@ -155,23 +160,23 @@ public class ApiClient {
     }
 
     public void deletePullRequestApproval(String pullRequestId) {
-        delete(v2("/pullrequests/" + pullRequestId + "/approve"));
+        delete(v2(this.pullRequestsPath + pullRequestId + "/approve"));
     }
-    
+
     public void deletePullRequestComment(String pullRequestId, String commentId) {
-        delete(v1("/pullrequests/" + pullRequestId + "/comments/" + commentId));
+        delete(v1(this.pullRequestsPath + pullRequestId + "/comments/" + commentId));
     }
-    
+
     public void updatePullRequestComment(String pullRequestId, String content, String commentId) {
         NameValuePair[] data = new NameValuePair[] {
                 new NameValuePair("content", content),
         };
-        put(v1("/pullrequests/" + pullRequestId + "/comments/" + commentId), data);
+        put(v1(this.pullRequestsPath + pullRequestId + "/comments/" + commentId), data);
     }
 
     public Pullrequest.Participant postPullRequestApproval(String pullRequestId) {
         try {
-            return parse(post(v2("/pullrequests/" + pullRequestId + "/approve"),
+            return parse(post(v2(this.pullRequestsPath + pullRequestId + "/approve"),
                 new NameValuePair[]{}), Pullrequest.Participant.class);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Invalid pull request approval response.", e);
@@ -179,13 +184,13 @@ public class ApiClient {
         }
         return null;
     }
-    
+
     public Pullrequest.Comment postPullRequestComment(String pullRequestId, String content) {
         NameValuePair[] data = new NameValuePair[] {
                 new NameValuePair("content", content),
         };
         try {
-            return parse(post(v1("/pullrequests/" + pullRequestId + "/comments"), data), new TypeReference<Pullrequest.Comment>() {});
+            return parse(post(v1(this.pullRequestsPath + pullRequestId + "/comments"), data), new TypeReference<Pullrequest.Comment>() {});
         } catch(Exception e) {
             logger.log(Level.WARNING, "Invalid pull request comment response.", e);
             e.printStackTrace();
@@ -198,6 +203,10 @@ public class ApiClient {
     }
 
     private String v1(String url) {
+        if (this.bitbucketServerUrl != null && !"".equals(this.bitbucketServerUrl.trim())) {
+            return this.bitbucketServerUrl + "/repos/" + repositoryName + url;
+        }
+
         return V1_API_BASE_URL + this.owner + "/" + this.repositoryName + url;
     }
 
@@ -206,6 +215,10 @@ public class ApiClient {
     }
 
     private String v2(String owner, String repositoryName, String path) {
+        if (this.bitbucketServerUrl != null && !"".equals(this.bitbucketServerUrl.trim())) {
+            return this.bitbucketServerUrl + "/repos/" + repositoryName + path;
+        }
+
         return V2_API_BASE_URL + owner + "/" + repositoryName + path;
     }
 
@@ -223,7 +236,7 @@ public class ApiClient {
     private void delete(String path) {
          send(new DeleteMethod(path));
     }
-    
+
     private void put(String path, NameValuePair[] data) {
         PutMethod req = new PutMethod(path);
         req.setRequestBody(EncodingUtil.formUrlEncode(data, "utf-8"));

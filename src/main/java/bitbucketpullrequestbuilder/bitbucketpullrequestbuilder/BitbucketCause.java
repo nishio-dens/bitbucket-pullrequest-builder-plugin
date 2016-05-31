@@ -10,6 +10,7 @@ public class BitbucketCause extends Cause {
     private final String targetBranch;
     private final String repositoryOwner;
     private final String repositoryName;
+    private final String bitbucketServerUrl;
     private final String pullRequestId;
     private final String destinationRepositoryOwner;
     private final String destinationRepositoryName;
@@ -23,6 +24,7 @@ public class BitbucketCause extends Cause {
                           String targetBranch,
                           String repositoryOwner,
                           String repositoryName,
+                          String bitbucketServerUrl,
                           String pullRequestId,
                           String destinationRepositoryOwner,
                           String destinationRepositoryName,
@@ -34,6 +36,7 @@ public class BitbucketCause extends Cause {
         this.targetBranch = targetBranch;
         this.repositoryOwner = repositoryOwner;
         this.repositoryName = repositoryName;
+        this.bitbucketServerUrl = bitbucketServerUrl;
         this.pullRequestId = pullRequestId;
         this.destinationRepositoryOwner = destinationRepositoryOwner;
         this.destinationRepositoryName = destinationRepositoryName;
@@ -58,10 +61,13 @@ public class BitbucketCause extends Cause {
         return repositoryName;
     }
 
+    public String getBitbucketServerUrl() {
+        return bitbucketServerUrl;
+    }
+
     public String getPullRequestId() {
         return pullRequestId;
     }
-
 
     public String getDestinationRepositoryOwner() {
         return destinationRepositoryOwner;
@@ -86,7 +92,7 @@ public class BitbucketCause extends Cause {
         description += "\">#" + this.getPullRequestId() + " " + this.getPullRequestTitle() + "</a>";
         return description;
     }
-    
+
     public String getPullRequestAuthor() {
       return this.pullRequestAuthor;
     }

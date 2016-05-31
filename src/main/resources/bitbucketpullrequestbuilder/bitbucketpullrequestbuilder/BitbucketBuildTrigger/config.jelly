@@ -17,6 +17,9 @@
   <f:entry title="RepositoryName" field="repositoryName">
     <f:textbox />
   </f:entry>
+  <f:entry title="Bitbucket server URL" field="bitbucketServerUrl">
+    <f:textbox />
+  </f:entry>
   <f:entry title="BranchesFilter" field="branchesFilter">
     <f:textbox />
   </f:entry>

@@ -57,8 +57,8 @@ public class BitbucketPullRequestsBuilder {
 
     public AbstractProject<?, ?> getProject() {
         return this.project;
-    }        
-    
+    }
+
     /**
      * Return MD5 hashed full project name or full project name, if MD5 hash provider inaccessible
      * @return unique project id

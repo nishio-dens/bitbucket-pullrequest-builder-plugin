@@ -36,6 +36,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     private final String password;
     private final String repositoryOwner;
     private final String repositoryName;
+    private final String bitbucketServerUrl;
     private final String branchesFilter;
     private final boolean branchesFilterBySCMIncludes;
     private final String ciKey;
@@ -47,7 +48,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     transient private BitbucketPullRequestsBuilder bitbucketPullRequestsBuilder;
 
     @Extension
-    public static final BitbucketBuildTriggerDescriptor descriptor = new BitbucketBuildTriggerDescriptor();   
+    public static final BitbucketBuildTriggerDescriptor descriptor = new BitbucketBuildTriggerDescriptor();
 
     @DataBoundConstructor
     public BitbucketBuildTrigger(
@@ -58,6 +59,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             String password,
             String repositoryOwner,
             String repositoryName,
+            String bitbucketServerUrl,
             String branchesFilter,
             boolean branchesFilterBySCMIncludes,
             String ciKey,
@@ -74,6 +76,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         this.password = password;
         this.repositoryOwner = repositoryOwner;
         this.repositoryName = repositoryName;
+        this.bitbucketServerUrl = bitbucketServerUrl;
         this.branchesFilter = branchesFilter;
         this.branchesFilterBySCMIncludes = branchesFilterBySCMIncludes;
         this.ciKey = ciKey;
@@ -111,10 +114,14 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         return repositoryName;
     }
 
+    public String getBitbucketServerUrl() {
+        return bitbucketServerUrl;
+    }
+
     public String getBranchesFilter() {
         return branchesFilter;
     }
-    
+
     public boolean getBranchesFilterBySCMIncludes() {
       return branchesFilterBySCMIncludes;
     }
@@ -164,17 +171,18 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     public QueueTaskFuture<?> startJob(BitbucketCause cause) {
         Map<String, ParameterValue> values = this.getDefaultParameters();
-        
+
         values.put("sourceBranch", new StringParameterValue("sourceBranch", cause.getSourceBranch()));
         values.put("targetBranch", new StringParameterValue("targetBranch", cause.getTargetBranch()));
         values.put("repositoryOwner", new StringParameterValue("repositoryOwner", cause.getRepositoryOwner()));
         values.put("repositoryName", new StringParameterValue("repositoryName", cause.getRepositoryName()));
+        values.put("bitbucketServerUrl", new StringParameterValue("bitbucketServerUrl", cause.getBitbucketServerUrl()));
         values.put("pullRequestId", new StringParameterValue("pullRequestId", cause.getPullRequestId()));
         values.put("destinationRepositoryOwner", new StringParameterValue("destinationRepositoryOwner", cause.getDestinationRepositoryOwner()));
         values.put("destinationRepositoryName", new StringParameterValue("destinationRepositoryName", cause.getDestinationRepositoryName()));
         values.put("pullRequestTitle", new StringParameterValue("pullRequestTitle", cause.getPullRequestTitle()));
         values.put("pullRequestAuthor", new StringParameterValue("pullRequestAuthor", cause.getPullRequestAuthor()));
-        
+
         return this.job.scheduleBuild2(0, cause, new ParametersAction(new ArrayList(values.values())), new RevisionParameterAction(cause.getSourceCommitHash()));
     }
 

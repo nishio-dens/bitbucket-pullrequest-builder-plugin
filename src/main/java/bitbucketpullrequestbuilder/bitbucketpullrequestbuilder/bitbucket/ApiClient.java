@@ -6,9 +6,12 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.type.TypeFactory;
+import org.codehaus.jackson.type.JavaType;
 import org.codehaus.jackson.type.TypeReference;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -82,23 +85,11 @@ public class ApiClient {
     }
 
     public List<Pullrequest> getPullRequests() {
-        try {
-            return parse(get(v2("/pullrequests/")), Pullrequest.Response.class).getPullrequests();
-        } catch(Exception e) {
-            logger.log(Level.WARNING, "invalid pull request response.", e);
-            e.printStackTrace();
-        }
-        return Collections.EMPTY_LIST;
+        return getAllValues(v2("/pullrequests/"), 50, Pullrequest.class);
     }
 
     public List<Pullrequest.Comment> getPullRequestComments(String commentOwnerName, String commentRepositoryName, String pullRequestId) {
-        try {
-            return parse(get(v1("/pullrequests/" + pullRequestId + "/comments")), new TypeReference<List<Pullrequest.Comment>>() {});
-        } catch(Exception e) {
-            logger.log(Level.WARNING, "invalid pull request response.", e);
-            e.printStackTrace();
-        }
-        return Collections.EMPTY_LIST;
+        return getAllValues(v2("/pullrequests/" + pullRequestId + "/comments"), 100, Pullrequest.Comment.class);
     }
     
     public String getName() {
@@ -193,6 +184,23 @@ public class ApiClient {
         return null;
     }
 
+    private <T> List<T> getAllValues(String rootUrl, int pageLen, Class<T> cls) {
+        List<T> values = new ArrayList<T>();
+        try {
+            String url = rootUrl + "?pagelen=" + pageLen;
+            do {
+                final JavaType type = TypeFactory.defaultInstance().constructParametricType(Pullrequest.Response.class, cls);
+                Pullrequest.Response<T> response = parse(get(url), type);
+                values.addAll(response.getValues());
+                url = response.getNext();
+            } while (url != null);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "invalid response.", e);
+            e.printStackTrace();
+        }
+        return values;
+    }
+
     private HttpClient getHttpClient() {
         return this.factory.getInstanceHttpClient();
     }
@@ -252,6 +260,9 @@ public class ApiClient {
 
     private <R> R parse(String response, Class<R> cls) throws IOException {
         return new ObjectMapper().readValue(response, cls);
+    }
+    private <R> R parse(String response, JavaType type) throws IOException {
+        return new ObjectMapper().readValue(response, type);
     }
     private <R> R parse(String response, TypeReference<R> ref) throws IOException {
         return new ObjectMapper().readValue(response, ref);

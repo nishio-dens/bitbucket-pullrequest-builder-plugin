@@ -1,12 +1,19 @@
-Filter option in custom format. Default value is empty or "any".
-Available formats:
-* any pull requests applied for this project: "any", "*" or empty string.
-* filtered by destination branch: "my-branch" or more complex reg-ex filter "r:^master" (must be started with "r:" and case insensitive match).
-* filtered by source and destination branches: "s:source-branch d:dest-branch"
-* filtered by source and destination branches with regex: "s:r:^feature d:r:master$"
-* filtered by many destination/source branches: "s:one s:two s:three d:master d:r:master$"
-* filtered by many sources branches: "s:one s:two s:r:^three d:"
-When you using format with source branch filter "s" or destination filter "d", you must cpecify great than one source and destination filter, eg "s:1 s:2 s:... d:".
-Any sources and any destinations for pull request:
-* filter string: "*"
-* filter string: "s: d:"
+<div>
+  Filter option in custom format. Default value is empty or <tt>any</tt>.<br/>
+  Available formats:
+  <ul>
+    <li>any pull requests applied for this project: <tt>any</tt>, <tt>*</tt> or empty string</li>
+    <li>filtered by destination branch: <tt>my-branch</tt> or more complex reg-ex filter <tt>r:^master</tt> (must be started with <tt>r:</tt> and case insensitive match).</li>
+    <li>filtered by source and destination branches: <tt>s:source-branch d:dest-branch</tt></li>
+    <li>filtered by source and destination branches with regex: <tt>s:r:^feature d:r:master$</tt></li>
+    <li>filtered by many destination/source branches: <tt>s:one s:two s:three d:master d:r:master$</tt></li>
+    <li>filtered by many sources branches: <tt>s:one s:two s:r:^three d:</tt></li>
+  </ul>
+  <p/>
+  When you using format with source branch filter <tt>s</tt> or destination filter <tt>d</tt>, you must specify great than one source and destination filter, eg <tt>s:1 s:2 s:... d:</tt>.<br/>
+  Any sources and any destinations for pull request:
+  <ul>
+    <li>filter string: <tt>*</tt></li>
+    <li>filter string: <tt>s: d:</tt></li>
+  </ul>
+</div>

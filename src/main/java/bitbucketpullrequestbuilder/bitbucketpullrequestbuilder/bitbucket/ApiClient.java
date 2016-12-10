@@ -5,6 +5,7 @@ import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.DeleteMethod;
+import org.apache.commons.httpclient.params.HttpClientParams;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 
@@ -42,10 +43,16 @@ public class ApiClient {
     public static final byte MAX_KEY_SIZE_BB_API = 40;
 
     public static class HttpClientFactory {    
-        public static final HttpClientFactory INSTANCE = new HttpClientFactory(); 
+        public static final HttpClientFactory INSTANCE = new HttpClientFactory();
+        private static final int DEFAULT_TIMEOUT = 60000;
         
         public HttpClient getInstanceHttpClient() {
             HttpClient client = new HttpClient();
+
+            HttpClientParams params = client.getParams();
+            params.setConnectionManagerTimeout(DEFAULT_TIMEOUT);
+            params.setSoTimeout(DEFAULT_TIMEOUT);
+
             if (Jenkins.getInstance() == null) return client;
 
             ProxyConfiguration proxy = Jenkins.getInstance().proxy;

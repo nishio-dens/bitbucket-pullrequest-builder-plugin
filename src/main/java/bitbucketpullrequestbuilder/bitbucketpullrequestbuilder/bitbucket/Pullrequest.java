@@ -2,6 +2,7 @@ package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket;
 
 import java.util.List;
 import java.util.Comparator;
+import java.util.Map;
 
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
@@ -31,11 +32,12 @@ public class Pullrequest {
     private Author     author;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Response {
+    public static class Response<T> {
         private int pageLength;
-        private List<Pullrequest> pullrequests;
+        private List<T> values;
         private int page;
         private int size;
+        private String next;
 
         @JsonProperty("pagelen")
         public int getPageLength() {
@@ -45,13 +47,11 @@ public class Pullrequest {
         public void setPageLength(int pageLength) {
             this.pageLength = pageLength;
         }
-        @JsonProperty("values")
-        public List<Pullrequest> getPullrequests() {
-            return pullrequests;
+        public List<T> getValues() {
+            return values;
         }
-        @JsonProperty("values")
-        public void setPullrequests(List<Pullrequest> pullrequests) {
-            this.pullrequests = pullrequests;
+        public void setValues(List<T> values) {
+            this.values = values;
         }
         public int getPage() {
             return page;
@@ -65,7 +65,14 @@ public class Pullrequest {
         public void setSize(int size) {
             this.size = size;
         }
+        public String getNext() {
+            return next;
+        }
+        public void setNext(String next) {
+            this.next = next;
+        }
     }
+
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Revision {
@@ -214,8 +221,13 @@ public class Pullrequest {
             return content;
         }
 
-        public void setContent(String content) {
-            this.content = content;
+        public void setContent(Object content) {
+            if (content instanceof String) {
+                this.content = (String)content;
+            } else if (content instanceof Map){
+                this.content = (String)((Map)content).get("raw");
+            }
+            return;
         }
         @JsonProperty("utc_last_updated")
         public String getUpdatedOn() {

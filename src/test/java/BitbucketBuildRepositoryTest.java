@@ -118,6 +118,7 @@ public class BitbucketBuildRepositoryTest {
       "", true,
       "", "", "",
       true, 
+      true,
       true
     );
     
@@ -148,6 +149,7 @@ public class BitbucketBuildRepositoryTest {
       "", true,
       "", "", "",
       true, 
+      true,
       true
     );          
     
@@ -202,6 +204,7 @@ public class BitbucketBuildRepositoryTest {
       "", true,
       "jenkins", "Jenkins", "",
       true, 
+      true,
       true
     );
     
@@ -248,6 +251,7 @@ public class BitbucketBuildRepositoryTest {
       "", true,
       "jenkins-too-long-ci-key", "Jenkins", "",
       true, 
+      true,
       true
     );
     

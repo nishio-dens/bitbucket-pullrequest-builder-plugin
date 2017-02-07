@@ -253,9 +253,13 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
 
     @Override
     public void run() {
-        logger.log(Level.INFO, "TODO: check if project is disabled before calling bitbucketPullRequestsBuilder.run()");
-        this.bitbucketPullRequestsBuilder.run();
-        this.getDescriptor().save();
+    	Job<?,?> project = this.getBuilder().getProject();
+    	if (project instanceof AbstractProject && ((AbstractProject)project).isDisabled()) {
+    		logger.info("Build Skip.");
+    	} else {
+    		this.bitbucketPullRequestsBuilder.run();
+            this.getDescriptor().save();
+    	}
     }
 
     @Override

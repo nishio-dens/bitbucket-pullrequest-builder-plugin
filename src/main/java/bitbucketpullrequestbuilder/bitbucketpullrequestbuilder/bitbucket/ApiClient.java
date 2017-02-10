@@ -1,28 +1,26 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket;
 
+import hudson.ProxyConfiguration;
+import jenkins.model.Jenkins;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
+import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.DeleteMethod;
+import org.apache.commons.httpclient.methods.PutMethod;
+import org.apache.commons.httpclient.util.EncodingUtil;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import jenkins.model.Jenkins;
-import hudson.ProxyConfiguration;
-
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.httpclient.methods.PutMethod;
-import org.apache.commons.httpclient.util.EncodingUtil;
 
 /**
  * Created by nishio
@@ -251,9 +249,23 @@ public class ApiClient {
     }
 
     private <R> R parse(String response, Class<R> cls) throws IOException {
-        return new ObjectMapper().readValue(response, cls);
+        try {
+            return new ObjectMapper().readValue(response, cls);
+        }catch (IOException e){
+            logger.log(Level.SEVERE, String.format("Unable to parse the response.\n" +
+                                                           "repository: " + this.repositoryName + "\n" +
+                                                           "response: " + response));
+            throw e;
+        }
     }
     private <R> R parse(String response, TypeReference<R> ref) throws IOException {
-        return new ObjectMapper().readValue(response, ref);
+        try {
+            return new ObjectMapper().readValue(response, ref);
+        }catch (IOException e){
+            logger.log(Level.SEVERE, String.format("Unable to parse the response.\n" +
+                                                           "repository: " + this.repositoryName + "\n" +
+                                                           "response: " + response));
+            throw e;
+        }
     }
 }

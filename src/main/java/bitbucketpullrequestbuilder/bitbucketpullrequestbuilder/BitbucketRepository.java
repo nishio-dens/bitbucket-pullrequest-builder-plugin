@@ -128,8 +128,8 @@ public class BitbucketRepository {
     public void setBuildStatus(BitbucketCause cause, BuildState state, String buildUrl) {
         String comment = null;
         String sourceCommit = cause.getSourceCommitHash();
-        String owner = cause.getRepositoryOwner();
-        String repository = cause.getRepositoryName();
+        String owner = this.trigger.getRepositoryOwner();
+        String repository = this.trigger.getRepositoryName();
         String destinationBranch = cause.getTargetBranch();
 
         logger.info("setBuildStatus " + state + " for commit: " + sourceCommit + " with url " + buildUrl);

@@ -249,6 +249,8 @@ public class ApiClient {
     }
 
     private <R> R parse(String response, Class<R> cls) throws IOException {
+        logger.log(Level.FINEST, "parse response: \n" + response);
+
         try {
             return new ObjectMapper().readValue(response, cls);
         }catch (IOException e){
@@ -259,6 +261,8 @@ public class ApiClient {
         }
     }
     private <R> R parse(String response, TypeReference<R> ref) throws IOException {
+        logger.log(Level.FINEST, "parse response: \n" + response);
+
         try {
             return new ObjectMapper().readValue(response, ref);
         }catch (IOException e){

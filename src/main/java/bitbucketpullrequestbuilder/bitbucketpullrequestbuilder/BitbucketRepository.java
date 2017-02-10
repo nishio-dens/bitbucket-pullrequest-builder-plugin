@@ -214,15 +214,13 @@ public class BitbucketRepository {
 
             Pullrequest.Revision source = pullRequest.getSource();
             String sourceCommit = source.getCommit().getHash();
-            Pullrequest.Revision destination = pullRequest.getDestination();
-            String owner = destination.getRepository().getOwnerName();
-            String repositoryName = destination.getRepository().getRepositoryName();
+            String owner = trigger.getRepositoryOwner();
+            String repositoryName = trigger.getRepositoryName();
 
-            Pullrequest.Repository sourceRepository = source.getRepository();
             String buildKeyPart = this.builder.getProjectId();
 
             final boolean commitAlreadyBeenProcessed = this.client.hasBuildStatus(
-              sourceRepository.getOwnerName(), sourceRepository.getRepositoryName(), sourceCommit, buildKeyPart
+              this.trigger.getRepositoryOwner(), this.trigger.getRepositoryName(), sourceCommit, buildKeyPart
             );
             if (commitAlreadyBeenProcessed) logger.log(Level.INFO, 
               "Commit {0}#{1} has already been processed", 

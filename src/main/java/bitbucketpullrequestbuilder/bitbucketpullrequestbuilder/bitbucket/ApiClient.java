@@ -119,10 +119,8 @@ public class ApiClient {
           return new String(Hex.encodeHex(SHA1.digest(computedKey.getBytes("UTF-8"))));
         } catch(NoSuchAlgorithmException e) { 
           logger.log(Level.WARNING, "Failed to create hash provider", e);
-          e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
           logger.log(Level.WARNING, "Failed to create hash provider", e);
-          e.printStackTrace();
         }
       }      
       return (computedKey.length() <= MAX_KEY_SIZE_BB_API) ?  computedKey : computedKey.substring(0, MAX_KEY_SIZE_BB_API);
@@ -173,7 +171,6 @@ public class ApiClient {
                 new NameValuePair[]{}), Pullrequest.Participant.class);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Invalid pull request approval response.", e);
-            e.printStackTrace();
         }
         return null;
     }
@@ -186,7 +183,6 @@ public class ApiClient {
             return parse(post(v1("/pullrequests/" + pullRequestId + "/comments"), data), new TypeReference<Pullrequest.Comment>() {});
         } catch(Exception e) {
             logger.log(Level.WARNING, "Invalid pull request comment response.", e);
-            e.printStackTrace();
         }
         return null;
     }
@@ -203,7 +199,6 @@ public class ApiClient {
             } while (url != null);
         } catch (Exception e) {
             logger.log(Level.WARNING, "invalid response.", e);
-            e.printStackTrace();
         }
         return values;
     }
@@ -255,10 +250,8 @@ public class ApiClient {
             return req.getResponseBodyAsString();
         } catch (HttpException e) {
             logger.log(Level.WARNING, "Failed to send request.", e);
-            e.printStackTrace();
         } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to send request.", e);
-            e.printStackTrace();
         } finally {
           req.releaseConnection();
         }

@@ -114,7 +114,7 @@ public class Pullrequest {
         @JsonProperty("full_name")
         public void setFullName(String fullName) {
             // Also extract owner- and reponame
-            if (name != null) {
+            if (fullName != null) {
                 this.ownerName = fullName.split("/")[0];
                 this.repositoryName = fullName.split("/")[1];
             }

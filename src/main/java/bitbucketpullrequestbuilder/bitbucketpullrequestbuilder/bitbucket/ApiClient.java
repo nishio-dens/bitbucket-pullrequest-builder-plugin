@@ -167,6 +167,16 @@ public class ApiClient {
         put(v1("/pullrequests/" + pullRequestId + "/comments/" + commentId), data);
     }
 
+    public Pullrequest.Participant postPullRequestDecline(String pullRequestId){
+        try {
+            return parse(post(v2("/pullrequests/" + pullRequestId + "/decline"),
+                    new NameValuePair[]{}), Pullrequest.Participant.class);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Invalid pull request declined response.", e);
+            e.printStackTrace();
+        }
+        return null;
+    }
     public Pullrequest.Participant postPullRequestApproval(String pullRequestId) {
         try {
             return parse(post(v2("/pullrequests/" + pullRequestId + "/approve"),

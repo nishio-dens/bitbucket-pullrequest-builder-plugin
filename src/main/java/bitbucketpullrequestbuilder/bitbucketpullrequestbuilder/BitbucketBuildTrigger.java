@@ -43,6 +43,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     private final String ciSkipPhrases;
     private final boolean checkDestinationCommit;
     private final boolean approveIfSuccess;
+    private final boolean declineIfFailure;
 
     transient private BitbucketPullRequestsBuilder bitbucketPullRequestsBuilder;
 
@@ -64,7 +65,8 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             String ciName,
             String ciSkipPhrases,
             boolean checkDestinationCommit,
-            boolean approveIfSuccess
+            boolean approveIfSuccess,
+            boolean declineIfFailure
             ) throws ANTLRException {
         super(cron);
         this.projectPath = projectPath;
@@ -81,6 +83,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         this.ciSkipPhrases = ciSkipPhrases;
         this.checkDestinationCommit = checkDestinationCommit;
         this.approveIfSuccess = approveIfSuccess;
+        this.declineIfFailure = declineIfFailure;
     }
 
     public String getProjectPath() {
@@ -137,6 +140,10 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     public boolean getApproveIfSuccess() {
         return approveIfSuccess;
+    }
+
+    public boolean getDeclineIfFailure(){
+        return declineIfFailure;
     }
 
     @Override

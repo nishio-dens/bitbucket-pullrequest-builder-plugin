@@ -148,6 +148,10 @@ public class BitbucketRepository {
     public void postPullRequestApproval(String pullRequestId) {
         this.client.postPullRequestApproval(pullRequestId);
     }
+
+    public void postPullRequestDecline(String pullRequestId){
+        this.client.postPullRequestDecline((pullRequestId));
+    }
     
     public String getMyBuildTag(String buildKey) {
       return "#" + this.client.buildStatusKey(buildKey);
@@ -197,7 +201,7 @@ public class BitbucketRepository {
       List<Pullrequest.Comment> filteredComments = new LinkedList<Pullrequest.Comment>();      
       for(Pullrequest.Comment comment : comments) {
         String content = comment.getContent();
-        if (content == null || content.isEmpty()) continue;        
+        if (content == null || content.length() == 0) continue;
         boolean isTTP = this.isTTPComment(content);        
         boolean isTTPBuild = this.isTTPCommentBuildTags(content);        
         if (isTTP || isTTPBuild)  filteredComments.add(comment);

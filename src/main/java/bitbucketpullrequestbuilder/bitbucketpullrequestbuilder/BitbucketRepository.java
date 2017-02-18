@@ -38,6 +38,10 @@ public class BitbucketRepository {
     private static final String BUILD_REQUEST_DONE_MARKER = "ttp build flag";
     private static final String BUILD_REQUEST_MARKER_TAG_SINGLE_RX = "\\#[\\w\\-\\d]+";
     private static final String BUILD_REQUEST_MARKER_TAGS_RX = "\\[bid\\:\\s?(.*)\\]";
+    /**
+     * Default value for comment trigger.
+     */
+    public static final String DEFAULT_COMMENT_TRIGGER = "test this please";
 
     private String projectPath;
     private BitbucketPullRequestsBuilder builder;
@@ -182,7 +186,12 @@ public class BitbucketRepository {
     }
 
     private boolean isTTPComment(String content) {
-      return content.toLowerCase().contains(trigger.getCommentTrigger().toLowerCase());
+        // special case: in unit tests, trigger is null and can't be mocked
+        String commentTrigger = DEFAULT_COMMENT_TRIGGER;
+        if(trigger != null && StringUtils.isNotBlank(trigger.getCommentTrigger())) {
+            commentTrigger = trigger.getCommentTrigger();
+        }
+      return content.toLowerCase().contains(commentTrigger);
     }
 
     private boolean isTTPCommentBuildTags(String content) {

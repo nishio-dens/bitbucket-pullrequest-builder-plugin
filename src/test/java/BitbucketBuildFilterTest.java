@@ -1,5 +1,7 @@
 
+import antlr.ANTLRException;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketBuildFilter;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketBuildTrigger;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketCause;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketPullRequestsBuilder;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketRepository;
@@ -194,8 +196,8 @@ public class BitbucketBuildFilterTest {
   
   @Test
   @WithoutJenkins
-  public void filterPRComments() {
-    BitbucketPullRequestsBuilder builder = EasyMock.createMock(BitbucketPullRequestsBuilder.class); 
+  public void filterPRComments() throws ANTLRException {
+    BitbucketPullRequestsBuilder builder = EasyMock.createMock(BitbucketPullRequestsBuilder.class);
     EasyMock.expect(builder.getTrigger()).andReturn(null).anyTimes();
     EasyMock.replay(builder);
     

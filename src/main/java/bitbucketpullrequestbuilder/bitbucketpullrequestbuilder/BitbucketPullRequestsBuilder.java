@@ -69,10 +69,8 @@ public class BitbucketPullRequestsBuilder {
         return new String(Hex.encodeHex(MD5.digest(this.project.getFullName().getBytes("UTF-8"))));
       } catch (NoSuchAlgorithmException exc) {
         logger.log(Level.WARNING, "Failed to produce hash", exc);
-        exc.printStackTrace();
       } catch (UnsupportedEncodingException exc) {
         logger.log(Level.WARNING, "Failed to produce hash", exc);
-        exc.printStackTrace();
       }
       return this.project.getFullName();
     }

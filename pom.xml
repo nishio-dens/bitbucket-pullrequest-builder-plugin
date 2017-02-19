@@ -25,6 +25,11 @@
       <name>nishio_dens</name>
       <email>nishio@densan-labs.net</email>
     </developer>
+    <developer>
+      <id>damovsky</id>
+      <name>Martin Damovsky</name>
+      <email>martin.damovsky@gmail.com</email>
+    </developer>
   </developers>  
     
   <!-- get every artifact through repo.jenkins-ci.org, which proxies all the artifacts that we need -->

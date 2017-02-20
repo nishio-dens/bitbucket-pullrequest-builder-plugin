@@ -1,7 +1,6 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket;
 
 import java.util.List;
-import java.util.Comparator;
 import java.util.Map;
 
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
@@ -199,12 +198,12 @@ public class Pullrequest {
             }
         }
 
-        @JsonProperty("comment_id")
+        @JsonProperty("id")
         public Integer getId() {
             return id;
         }
 
-        @JsonProperty("comment_id")
+        @JsonProperty("id")
         public void setId(Integer id) {
             this.id = id;
         }
@@ -229,19 +228,19 @@ public class Pullrequest {
             }
             return;
         }
-        @JsonProperty("utc_last_updated")
+        @JsonProperty("updated_on")
         public String getUpdatedOn() {
             return updatedOn;
         }
-        @JsonProperty("utc_last_updated")
+        @JsonProperty("updated_on")
         public void setUpdatedOn(String updatedOn) {
             this.updatedOn = updatedOn;
         }
-        @JsonProperty("utc_created_on")
+        @JsonProperty("created_on")
         public String getCreatedOn() {
             return createdOn;
         }
-        @JsonProperty("utc_created_on")
+        @JsonProperty("created_on")
         public void setCreatedOn(String createdOn) {
             this.createdOn = createdOn;
         }

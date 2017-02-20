@@ -14,6 +14,7 @@ import hudson.triggers.Trigger;
 import hudson.triggers.TriggerDescriptor;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
+import jenkins.model.ParameterizedJobMixIn;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -33,7 +34,7 @@ import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
 /**
  * Created by nishio
  */
-public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
+public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
     private static final Logger logger = Logger.getLogger(BitbucketBuildTrigger.class.getName());
     private final String projectPath;
     private final String cron;
@@ -153,7 +154,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     @Override
-    public void start(AbstractProject<?, ?> project, boolean newInstance) {
+    public void start(Job<?, ?> project, boolean newInstance) {
         try {
             this.bitbucketPullRequestsBuilder = BitbucketPullRequestsBuilder.getBuilder();
             this.bitbucketPullRequestsBuilder.setProject(project);
@@ -175,6 +176,16 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         return this.bitbucketPullRequestsBuilder;
     }
 
+    private ParameterizedJobMixIn retrieveScheduleJob(final Job<?, ?> job) {
+        // TODO 1.621+ use standard method
+        return new ParameterizedJobMixIn() {
+            @Override
+            protected Job asJob() {
+                return job;
+            }
+        };
+    }
+
     public QueueTaskFuture<?> startJob(BitbucketCause cause) {
         Map<String, ParameterValue> values = this.getDefaultParameters();
 
@@ -183,7 +194,10 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             abortRunningJobsThatMatch(cause);
         }
 
-        return this.job.scheduleBuild2(0, cause, new ParametersAction(new ArrayList(values.values())), new RevisionParameterAction(cause.getSourceCommitHash()));
+        return retrieveScheduleJob(this.job).scheduleBuild2(0,
+                new CauseAction(cause),
+                new ParametersAction(new ArrayList(values.values())),
+                new RevisionParameterAction(cause.getSourceCommitHash()));
     }
 
     private void cancelPreviousJobsInQueueThatMatch(@Nonnull BitbucketCause bitbucketCause) {
@@ -239,12 +253,13 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     @Override
     public void run() {
-        if(this.getBuilder().getProject().isDisabled()) {
-            logger.info("Build Skip.");
-        } else {
-            this.bitbucketPullRequestsBuilder.run();
-        }
-        this.getDescriptor().save();
+    	Job<?,?> project = this.getBuilder().getProject();
+    	if (project instanceof AbstractProject && ((AbstractProject)project).isDisabled()) {
+    		logger.info("Build Skip.");
+    	} else {
+    		this.bitbucketPullRequestsBuilder.run();
+            this.getDescriptor().save();
+    	}
     }
 
     @Override
@@ -259,7 +274,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
         @Override
         public boolean isApplicable(Item item) {
-            return true;
+            return item instanceof Job && item instanceof ParameterizedJobMixIn.ParameterizedJob;
         }
 
         @Override

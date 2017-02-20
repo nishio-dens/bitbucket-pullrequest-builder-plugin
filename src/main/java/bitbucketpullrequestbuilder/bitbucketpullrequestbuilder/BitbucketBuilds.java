@@ -1,10 +1,7 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BuildState;
-import hudson.model.AbstractBuild;
-import hudson.model.Cause;
-import hudson.model.Result;
-import jenkins.model.Jenkins;
+import hudson.model.*;
 import jenkins.model.JenkinsLocationConfiguration;
 
 import java.io.IOException;
@@ -24,16 +21,7 @@ public class BitbucketBuilds {
         this.repository = repository;
     }
 
-    public BitbucketCause getCause(AbstractBuild build) {
-        Cause cause = build.getCause(BitbucketCause.class);
-        if (cause == null || !(cause instanceof BitbucketCause)) {
-            return null;
-        }
-        return (BitbucketCause) cause;
-    }
-
-    public void onStarted(AbstractBuild build) {
-        BitbucketCause cause = this.getCause(build);
+    void onStarted(BitbucketCause cause, Run<?, ?> build) {
         if (cause == null) {
             return;
         }
@@ -44,24 +32,21 @@ public class BitbucketBuilds {
         }
     }
 
-    public void onCompleted(AbstractBuild build) {
-        BitbucketCause cause = this.getCause(build);
+    void onCompleted(BitbucketCause cause, Result result, String buildUrl) {
         if (cause == null) {
             return;
         }
-        Result result = build.getResult();
         JenkinsLocationConfiguration globalConfig = new JenkinsLocationConfiguration();
         String rootUrl = globalConfig.getUrl();
-        String buildUrl = "";
         if (rootUrl == null) {
             logger.warning("PLEASE SET JENKINS ROOT URL IN GLOBAL CONFIGURATION FOR BUILD STATE REPORTING");
         } else {
-            buildUrl = rootUrl + build.getUrl();
+            buildUrl = rootUrl + buildUrl;
             BuildState state = result == Result.SUCCESS ? BuildState.SUCCESSFUL : BuildState.FAILED;
             repository.setBuildStatus(cause, state, buildUrl);
         }
 
-        if ( this.trigger.getApproveIfSuccess() && result == Result.SUCCESS ) {
+        if (this.trigger.getApproveIfSuccess() && result == Result.SUCCESS) {
             this.repository.postPullRequestApproval(cause.getPullRequestId());
         }
     }

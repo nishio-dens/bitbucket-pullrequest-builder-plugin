@@ -1,6 +1,5 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
-import hudson.model.Action;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.ArrayList;
@@ -114,7 +113,7 @@ class SourceDestFlag extends Filter {
 class AuthorFlag extends Filter {
   static final Pattern AUTHOR_MATCHER_RX = Pattern.compile(AUTHOR_RX + BRANCH_FILTER_RX_PART, Pattern.CASE_INSENSITIVE | Pattern.CANON_EQ);
   
-  class AuthorFlagImpl extends Filter {
+  static class AuthorFlagImpl extends Filter {
     @Override
     public boolean apply(String filter, BitbucketCause cause) { 
       String selectedRx = filter.startsWith(RX_FILTER_FLAG_SINGLE) ? filter.substring(RX_FILTER_FLAG_SINGLE.length()) : Pattern.quote(filter);
@@ -204,30 +203,30 @@ public class BitbucketBuildFilter {
     return this.currFilter.apply(this.filter, cause);
   }  
   
-  public static BitbucketBuildFilter InstanceByString(String filter) {
+  public static BitbucketBuildFilter instanceByString(String filter) {
     logger.log(Level.INFO, "Filter instance by filter string");
     return new BitbucketBuildFilter(filter);
   }    
   
-  static public String FilterFromGitSCMSource(AbstractGitSCMSource gitscm, String defaultFilter) {
+  static public String filterFromGitSCMSource(AbstractGitSCMSource gitscm, String defaultFilter) {
     if (gitscm == null) {
       logger.log(Level.INFO, "Git SCMSource unavailable. Using default value: {0}", defaultFilter);
       return defaultFilter;
     }
 
-    String filter = defaultFilter;
+    StringBuffer filter = new StringBuffer(defaultFilter);
     final String includes = gitscm.getIncludes();
     if (includes != null && !includes.isEmpty()) {
       for(String part : includes.split("\\s+")) {
-        filter += String.format("%s ", part.replaceAll("\\*\\/", "d:"));
+        filter.append(String.format("%s ", part.replaceAll("\\*\\/", "d:")));
       }
     }    
     
     logger.log(Level.INFO, "Git includes transformation to filter result: {1} -> {0}; default: {2}", new Object[]{ filter, includes, defaultFilter });
-    return filter.trim();
+    return filter.toString().trim();
   }
   
-  public static BitbucketBuildFilter InstanceBySCM(Collection<SCMSource> scmSources, String defaultFilter) {      
+  public static BitbucketBuildFilter instanceBySCM(Collection<SCMSource> scmSources, String defaultFilter) {
     logger.log(Level.INFO, "Filter instance by using SCMSources list with {0} items", scmSources.size());
     AbstractGitSCMSource gitscm = null;
     for(SCMSource scm : scmSources) {
@@ -237,6 +236,6 @@ public class BitbucketBuildFilter {
         break;
       }
     }    
-    return new BitbucketBuildFilter(FilterFromGitSCMSource(gitscm, defaultFilter));
+    return new BitbucketBuildFilter(filterFromGitSCMSource(gitscm, defaultFilter));
   }
 }

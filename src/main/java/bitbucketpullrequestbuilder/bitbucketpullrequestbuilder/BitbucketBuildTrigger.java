@@ -202,13 +202,21 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
 
     private void cancelPreviousJobsInQueueThatMatch(@Nonnull BitbucketCause bitbucketCause) {
         logger.fine("Looking for queued jobs that match PR ID: " + bitbucketCause.getPullRequestId());
-        Queue queue = Jenkins.getInstance().getQueue();
+        Queue queue = getInstance().getQueue();
         for (Queue.Item item : queue.getItems()) {
             if (hasCauseFromTheSamePullRequest(item.getCauses(), bitbucketCause)) {
                 logger.info("Canceling item in queue: " + item);
                 queue.cancel(item);
             }
         }
+    }
+
+    private Jenkins getInstance() {
+        final Jenkins instance = Jenkins.getInstance();
+        if (instance == null){
+            throw new IllegalStateException("Jenkins instance is NULL!");
+        }
+        return instance;
     }
 
     private void abortRunningJobsThatMatch(@Nonnull BitbucketCause bitbucketCause) {
@@ -218,7 +226,11 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
                 Build build = (Build) o;
                 if (build.isBuilding() && hasCauseFromTheSamePullRequest(build.getCauses(), bitbucketCause)) {
                     logger.info("Aborting build: " + build + " since PR is outdated");
-                    build.getExecutor().interrupt(Result.ABORTED);
+                    final Executor executor = build.getExecutor();
+                    if (executor == null){
+                        throw new IllegalStateException("Executor can't be NULL");
+                    }
+                    executor.interrupt(Result.ABORTED);
                 }
             }
         }

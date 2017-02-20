@@ -199,6 +199,21 @@ public class Pullrequest {
             }
         }
 
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            final Comment comment = (Comment) o;
+
+            return getId() != null ? getId().equals(comment.getId()) : comment.getId() == null;
+        }
+
+        @Override
+        public int hashCode() {
+            return getId() != null ? getId().hashCode() : 0;
+        }
+
         @JsonProperty("comment_id")
         public Integer getId() {
             return id;

@@ -120,10 +120,19 @@ public class BitbucketRepository {
                     pullRequest.getDestination().getCommit().getHash(),
                     pullRequest.getAuthor().getCombinedUsername()
             );
-            setBuildStatus(cause, BuildState.INPROGRESS, Jenkins.getInstance().getRootUrl());
+            setBuildStatus(cause, BuildState.INPROGRESS, getInstance().getRootUrl());
             this.builder.getTrigger().startJob(cause);
         }
     }
+
+    private Jenkins getInstance() {
+        final Jenkins instance = Jenkins.getInstance();
+        if (instance == null){
+            throw new IllegalStateException("Jenkins instance is NULL!");
+        }
+        return instance;
+    }
+
 
     public void setBuildStatus(BitbucketCause cause, BuildState state, String buildUrl) {
         String comment = null;
@@ -295,8 +304,8 @@ public class BitbucketRepository {
             sources.add(src);                
         
         BitbucketBuildFilter filter = !this.trigger.getBranchesFilterBySCMIncludes() ? 
-          BitbucketBuildFilter.InstanceByString(this.trigger.getBranchesFilter()) :
-          BitbucketBuildFilter.InstanceBySCM(sources, this.trigger.getBranchesFilter());
+          BitbucketBuildFilter.instanceByString(this.trigger.getBranchesFilter()) :
+          BitbucketBuildFilter.instanceBySCM(sources, this.trigger.getBranchesFilter());
         
         return filter.approved(cause);
     }

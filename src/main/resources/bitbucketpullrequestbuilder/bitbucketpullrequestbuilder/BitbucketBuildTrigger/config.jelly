@@ -38,6 +38,9 @@
   <f:entry title="Approve if build success?" field="approveIfSuccess">
     <f:checkbox />
   </f:entry>
+  <f:entry title="Cancel outdated jobs?" field="cancelOutdatedJobs">
+    <f:checkbox default="false"/>
+  </f:entry>
   <f:entry title="Comment phrase to trigger build" field="commentTrigger">
     <f:textbox default="test this please"/>
   </f:entry>

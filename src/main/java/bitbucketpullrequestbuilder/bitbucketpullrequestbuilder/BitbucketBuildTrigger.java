@@ -7,27 +7,34 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 import hudson.Extension;
 import hudson.model.*;
+import hudson.model.Queue;
 import hudson.model.queue.QueueTaskFuture;
 import hudson.plugins.git.RevisionParameterAction;
 import hudson.triggers.Trigger;
 import hudson.triggers.TriggerDescriptor;
 import hudson.util.ListBoxModel;
+import jenkins.model.Jenkins;
+import jenkins.model.ParameterizedJobMixIn;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
 
 /**
  * Created by nishio
  */
-public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
+public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
     private static final Logger logger = Logger.getLogger(BitbucketBuildTrigger.class.getName());
     private final String projectPath;
     private final String cron;
@@ -43,6 +50,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     private final String ciSkipPhrases;
     private final boolean checkDestinationCommit;
     private final boolean approveIfSuccess;
+    private final boolean cancelOutdatedJobs;
     private final String commentTrigger;
 
     transient private BitbucketPullRequestsBuilder bitbucketPullRequestsBuilder;
@@ -52,38 +60,40 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     @DataBoundConstructor
     public BitbucketBuildTrigger(
-        String projectPath,
-        String cron,
-        String credentialsId,
-        String username,
-        String password,
-        String repositoryOwner,
-        String repositoryName,
-        String branchesFilter,
-        boolean branchesFilterBySCMIncludes,
-        String ciKey,
-        String ciName,
-        String ciSkipPhrases,
-        boolean checkDestinationCommit,
-        boolean approveIfSuccess,
-        String commentTrigger
-    ) throws ANTLRException {
-      super(cron);
-      this.projectPath = projectPath;
-      this.cron = cron;
-      this.credentialsId = credentialsId;
-      this.username = username;
-      this.password = password;
-      this.repositoryOwner = repositoryOwner;
-      this.repositoryName = repositoryName;
-      this.branchesFilter = branchesFilter;
-      this.branchesFilterBySCMIncludes = branchesFilterBySCMIncludes;
-      this.ciKey = ciKey;
-      this.ciName = ciName;
-      this.ciSkipPhrases = ciSkipPhrases;
-      this.checkDestinationCommit = checkDestinationCommit;
-      this.approveIfSuccess = approveIfSuccess;
-      this.commentTrigger = commentTrigger;
+            String projectPath,
+            String cron,
+            String credentialsId,
+            String username,
+            String password,
+            String repositoryOwner,
+            String repositoryName,
+            String branchesFilter,
+            boolean branchesFilterBySCMIncludes,
+            String ciKey,
+            String ciName,
+            String ciSkipPhrases,
+            boolean checkDestinationCommit,
+            boolean approveIfSuccess,
+            boolean cancelOutdatedJobs,
+            String commentTrigger
+            ) throws ANTLRException {
+        super(cron);
+        this.projectPath = projectPath;
+        this.cron = cron;
+        this.credentialsId = credentialsId;
+        this.username = username;
+        this.password = password;
+        this.repositoryOwner = repositoryOwner;
+        this.repositoryName = repositoryName;
+        this.branchesFilter = branchesFilter;
+        this.branchesFilterBySCMIncludes = branchesFilterBySCMIncludes;
+        this.ciKey = ciKey;
+        this.ciName = ciName;
+        this.ciSkipPhrases = ciSkipPhrases;
+        this.checkDestinationCommit = checkDestinationCommit;
+        this.approveIfSuccess = approveIfSuccess;
+        this.cancelOutdatedJobs = cancelOutdatedJobs;
+        this.commentTrigger = commentTrigger;
     }
 
     public String getProjectPath() {
@@ -139,17 +149,21 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public boolean getApproveIfSuccess() {
-      return approveIfSuccess;
+        return approveIfSuccess;
+    }
+
+    public boolean getCancelOutdatedJobs() {
+        return cancelOutdatedJobs;
     }
     /**
      * @return a phrase that when entered in a comment will trigger a new build
      */
     public String getCommentTrigger() {
-      return commentTrigger;
+        return commentTrigger;
     }
 
     @Override
-    public void start(AbstractProject<?, ?> project, boolean newInstance) {
+    public void start(Job<?, ?> project, boolean newInstance) {
         try {
             this.bitbucketPullRequestsBuilder = BitbucketPullRequestsBuilder.getBuilder();
             this.bitbucketPullRequestsBuilder.setProject(project);
@@ -171,9 +185,67 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         return this.bitbucketPullRequestsBuilder;
     }
 
+    private ParameterizedJobMixIn retrieveScheduleJob(final Job<?, ?> job) {
+        // TODO 1.621+ use standard method
+        return new ParameterizedJobMixIn() {
+            @Override
+            protected Job asJob() {
+                return job;
+            }
+        };
+    }
+
     public QueueTaskFuture<?> startJob(BitbucketCause cause) {
         Map<String, ParameterValue> values = this.getDefaultParameters();
-        return this.job.scheduleBuild2(0, cause, new ParametersAction(new ArrayList(values.values())), new RevisionParameterAction(cause.getSourceCommitHash()));
+
+        if (getCancelOutdatedJobs()) {
+            cancelPreviousJobsInQueueThatMatch(cause);
+            abortRunningJobsThatMatch(cause);
+        }
+
+        return retrieveScheduleJob(this.job).scheduleBuild2(0,
+                new CauseAction(cause),
+                new ParametersAction(new ArrayList(values.values())),
+                new RevisionParameterAction(cause.getSourceCommitHash()));
+    }
+
+    private void cancelPreviousJobsInQueueThatMatch(@Nonnull BitbucketCause bitbucketCause) {
+        logger.fine("Looking for queued jobs that match PR ID: " + bitbucketCause.getPullRequestId());
+        Queue queue = Jenkins.getInstance().getQueue();
+        for (Queue.Item item : queue.getItems()) {
+            if (hasCauseFromTheSamePullRequest(item.getCauses(), bitbucketCause)) {
+                logger.info("Canceling item in queue: " + item);
+                queue.cancel(item);
+            }
+        }
+    }
+
+    private void abortRunningJobsThatMatch(@Nonnull BitbucketCause bitbucketCause) {
+        logger.fine("Looking for running jobs that match PR ID: " + bitbucketCause.getPullRequestId());
+        for (Object o : job.getBuilds()) {
+            if (o instanceof Build) {
+                Build build = (Build) o;
+                if (build.isBuilding() && hasCauseFromTheSamePullRequest(build.getCauses(), bitbucketCause)) {
+                    logger.info("Aborting build: " + build + " since PR is outdated");
+                    build.getExecutor().interrupt(Result.ABORTED);
+                }
+            }
+        }
+    }
+
+    private boolean hasCauseFromTheSamePullRequest(@Nullable List<Cause> causes, @Nullable BitbucketCause pullRequestCause) {
+        if (causes != null && pullRequestCause != null) {
+            for (Cause cause : causes) {
+                if (cause instanceof BitbucketCause) {
+                    BitbucketCause sc = (BitbucketCause) cause;
+                    if (StringUtils.equals(sc.getPullRequestId(), pullRequestCause.getPullRequestId()) &&
+                            StringUtils.equals(sc.getRepositoryName(), pullRequestCause.getRepositoryName())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private Map<String, ParameterValue> getDefaultParameters() {
@@ -190,12 +262,13 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     @Override
     public void run() {
-        if(this.getBuilder().getProject().isDisabled()) {
-            logger.info("Build Skip.");
-        } else {
-            this.bitbucketPullRequestsBuilder.run();
-        }
-        this.getDescriptor().save();
+    	Job<?,?> project = this.getBuilder().getProject();
+    	if (project instanceof AbstractProject && ((AbstractProject)project).isDisabled()) {
+    		logger.info("Build Skip.");
+    	} else {
+    		this.bitbucketPullRequestsBuilder.run();
+            this.getDescriptor().save();
+    	}
     }
 
     @Override
@@ -210,7 +283,7 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
         @Override
         public boolean isApplicable(Item item) {
-            return true;
+            return item instanceof Job && item instanceof ParameterizedJobMixIn.ParameterizedJob;
         }
 
         @Override

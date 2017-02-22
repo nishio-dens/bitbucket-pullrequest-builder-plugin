@@ -1,7 +1,6 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
-import hudson.model.AbstractProject;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
@@ -11,6 +10,7 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import hudson.model.Job;
 import org.apache.commons.codec.binary.Hex;
 
 /**
@@ -18,7 +18,7 @@ import org.apache.commons.codec.binary.Hex;
  */
 public class BitbucketPullRequestsBuilder {
     private static final Logger logger = Logger.getLogger(BitbucketBuildTrigger.class.getName());
-    private AbstractProject<?, ?> project;
+    private Job<?, ?> project;
     private BitbucketBuildTrigger trigger;
     private BitbucketRepository repository;
     private BitbucketBuilds builds;
@@ -47,7 +47,7 @@ public class BitbucketPullRequestsBuilder {
         return this;
     }
 
-    public void setProject(AbstractProject<?, ?> project) {
+    public void setProject(Job<?, ?> project) {
         this.project = project;
     }
 
@@ -55,7 +55,7 @@ public class BitbucketPullRequestsBuilder {
         this.trigger = trigger;
     }
 
-    public AbstractProject<?, ?> getProject() {
+    public Job<?, ?> getProject() {
         return this.project;
     }        
     
@@ -69,12 +69,11 @@ public class BitbucketPullRequestsBuilder {
         return new String(Hex.encodeHex(MD5.digest(this.project.getFullName().getBytes("UTF-8"))));
       } catch (NoSuchAlgorithmException exc) {
         logger.log(Level.WARNING, "Failed to produce hash", exc);
-        exc.printStackTrace();
       } catch (UnsupportedEncodingException exc) {
         logger.log(Level.WARNING, "Failed to produce hash", exc);
-        exc.printStackTrace();
       }
       return this.project.getFullName();
+
     }
 
     public BitbucketBuildTrigger getTrigger() {

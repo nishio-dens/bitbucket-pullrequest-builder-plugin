@@ -189,8 +189,11 @@ public class Pullrequest {
         private String  updatedOn;
         private String  createdOn;
 
+        @Override
         public int compareTo(Comment target) {
-            if (this.getId() > target.getId()) {
+            if (target == null){
+                return -1;
+            } else if (this.getId() > target.getId()) {
                 return 1;
             } else if (this.getId().equals(target.getId())) {
                 return 0;

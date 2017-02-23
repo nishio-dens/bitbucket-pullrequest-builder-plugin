@@ -35,10 +35,13 @@ import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
 public class BitbucketRepository {
     private static final Logger logger = Logger.getLogger(BitbucketRepository.class.getName());
     private static final String BUILD_DESCRIPTION = "%s: %s into %s";
-    private static final String BUILD_REQUEST_MARKER = "test this please";
     private static final String BUILD_REQUEST_DONE_MARKER = "ttp build flag";
     private static final String BUILD_REQUEST_MARKER_TAG_SINGLE_RX = "\\#[\\w\\-\\d]+";
     private static final String BUILD_REQUEST_MARKER_TAGS_RX = "\\[bid\\:\\s?(.*)\\]";
+    /**
+     * Default value for comment trigger.
+     */
+    public static final String DEFAULT_COMMENT_TRIGGER = "test this please";
 
     private String projectPath;
     private BitbucketPullRequestsBuilder builder;
@@ -192,7 +195,12 @@ public class BitbucketRepository {
     }
     
     private boolean isTTPComment(String content) {
-      return content.toLowerCase().contains(BUILD_REQUEST_MARKER.toLowerCase());
+        // special case: in unit tests, trigger is null and can't be mocked
+        String commentTrigger = DEFAULT_COMMENT_TRIGGER;
+        if(trigger != null && StringUtils.isNotBlank(trigger.getCommentTrigger())) {
+            commentTrigger = trigger.getCommentTrigger();
+        }
+      return content.toLowerCase().contains(commentTrigger);
     }
     
     private boolean isTTPCommentBuildTags(String content) {

@@ -42,4 +42,7 @@
   <f:entry title="Cancel outdated jobs?" field="cancelOutdatedJobs">
     <f:checkbox default="false"/>
   </f:entry>
+  <f:entry title="Comment phrase to trigger build" field="commentTrigger">
+    <f:textbox default="test this please"/>
+  </f:entry>
 </j:jelly>

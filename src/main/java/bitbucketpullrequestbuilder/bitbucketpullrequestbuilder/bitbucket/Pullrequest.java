@@ -186,8 +186,6 @@ public class Pullrequest {
         private Integer id;
         private String  filename;
         private String  content;
-        private String  updatedOn;
-        private String  createdOn;
 
         @Override
         public int compareTo(Comment target) {
@@ -245,22 +243,7 @@ public class Pullrequest {
             }
             return;
         }
-        @JsonProperty("utc_last_updated")
-        public String getUpdatedOn() {
-            return updatedOn;
-        }
-        @JsonProperty("utc_last_updated")
-        public void setUpdatedOn(String updatedOn) {
-            this.updatedOn = updatedOn;
-        }
-        @JsonProperty("utc_created_on")
-        public String getCreatedOn() {
-            return createdOn;
-        }
-        @JsonProperty("utc_created_on")
-        public void setCreatedOn(String createdOn) {
-            this.createdOn = createdOn;
-        }
+
     }
     
     @JsonIgnoreProperties(ignoreUnknown = true)

@@ -217,12 +217,10 @@ public class Pullrequest {
             return getId() != null ? getId().hashCode() : 0;
         }
 
-        @JsonProperty("comment_id")
         public Integer getId() {
             return id;
         }
 
-        @JsonProperty("comment_id")
         public void setId(Integer id) {
             this.id = id;
         }

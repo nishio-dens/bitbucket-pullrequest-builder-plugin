@@ -189,14 +189,32 @@ public class Pullrequest {
         private String  updatedOn;
         private String  createdOn;
 
+        @Override
         public int compareTo(Comment target) {
-            if (this.getId() > target.getId()) {
+            if (target == null){
+                return -1;
+            } else if (this.getId() > target.getId()) {
                 return 1;
             } else if (this.getId().equals(target.getId())) {
                 return 0;
             } else {
                 return -1;
             }
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            final Comment comment = (Comment) o;
+
+            return getId() != null ? getId().equals(comment.getId()) : comment.getId() == null;
+        }
+
+        @Override
+        public int hashCode() {
+            return getId() != null ? getId().hashCode() : 0;
         }
 
         @JsonProperty("comment_id")

@@ -3,12 +3,12 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>1.596.1</version>
+    <version>2.11</version>
   </parent>
 
   <artifactId>bitbucket-pullrequest-builder</artifactId>
   <name>Bitbucket Pullrequest Builder Plugin</name>
-  <version>1.4.20-SNAPSHOT</version>
+  <version>1.4.22-SNAPSHOT</version>
   <description>This Jenkins plugin builds pull requests from Bitbucket.org and will report the test results.</description>
   <packaging>hpi</packaging>
   <url>https://wiki.jenkins-ci.org/display/JENKINS/Bitbucket+pullrequest+builder+plugin</url>    

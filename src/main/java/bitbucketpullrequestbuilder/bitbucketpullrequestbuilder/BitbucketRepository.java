@@ -47,7 +47,7 @@ public class BitbucketRepository {
     private BitbucketPullRequestsBuilder builder;
     private BitbucketBuildTrigger trigger;
     private ApiClient client;
-
+    
     public BitbucketRepository(String projectPath, BitbucketPullRequestsBuilder builder) {
         this.projectPath = projectPath;
         this.builder = builder;
@@ -56,26 +56,26 @@ public class BitbucketRepository {
     public void init() {
         this.init(null, null);
     }
-
+    
     public <T extends ApiClient.HttpClientFactory> void init(T httpFactory) {
         this.init(null, httpFactory);
     }
-
+    
     public void init(ApiClient client) {
         this.init(client, null);
     }
-
+    
     public <T extends ApiClient.HttpClientFactory> void init(ApiClient client, T httpFactory) {
         this.trigger = this.builder.getTrigger();
-
-        if (client == null) {
+        
+        if (client == null) {                      
             String username = trigger.getUsername();
-            String password = trigger.getPassword();
+            String password = trigger.getPassword();            
             StandardUsernamePasswordCredentials credentials = getCredentials(trigger.getCredentialsId());
             if (credentials != null) {
                 username = credentials.getUsername();
                 password = credentials.getPassword().getPlainText();
-            }
+            }            
             this.client = new ApiClient(
                 username,
                 password,
@@ -85,7 +85,7 @@ public class BitbucketRepository {
                 trigger.getCiName(),
                 httpFactory
             );
-
+            
         } else this.client = client;
     }
 
@@ -100,7 +100,7 @@ public class BitbucketRepository {
         }
         return targetPullRequests;
     }
-
+    
     public ApiClient getClient() {
       return this.client;
     }
@@ -123,10 +123,19 @@ public class BitbucketRepository {
                     pullRequest.getDestination().getCommit().getHash(),
                     pullRequest.getAuthor().getCombinedUsername()
             );
-            setBuildStatus(cause, BuildState.INPROGRESS, Jenkins.getInstance().getRootUrl());
+            setBuildStatus(cause, BuildState.INPROGRESS, getInstance().getRootUrl());
             this.builder.getTrigger().startJob(cause);
         }
     }
+
+    private Jenkins getInstance() {
+        final Jenkins instance = Jenkins.getInstance();
+        if (instance == null){
+            throw new IllegalStateException("Jenkins instance is NULL!");
+        }
+        return instance;
+    }
+
 
     public void setBuildStatus(BitbucketCause cause, BuildState state, String buildUrl) {
         String comment = null;
@@ -151,23 +160,23 @@ public class BitbucketRepository {
     public void postPullRequestApproval(String pullRequestId) {
         this.client.postPullRequestApproval(pullRequestId);
     }
-
+    
     public String getMyBuildTag(String buildKey) {
       return "#" + this.client.buildStatusKey(buildKey);
-    }
-
+    }    
+    
     final static Pattern BUILD_TAGS_RX = Pattern.compile(BUILD_REQUEST_MARKER_TAGS_RX, Pattern.CASE_INSENSITIVE | Pattern.CANON_EQ);
-    final static Pattern SINGLE_BUILD_TAG_RX = Pattern.compile(BUILD_REQUEST_MARKER_TAG_SINGLE_RX, Pattern.CASE_INSENSITIVE | Pattern.CANON_EQ);
-    final static String CONTENT_PART_TEMPLATE = "```[bid: %s]```";
-
+    final static Pattern SINGLE_BUILD_TAG_RX = Pattern.compile(BUILD_REQUEST_MARKER_TAG_SINGLE_RX, Pattern.CASE_INSENSITIVE | Pattern.CANON_EQ); 
+    final static String CONTENT_PART_TEMPLATE = "```[bid: %s]```";    
+    
     private List<String> getAvailableBuildTagsFromTTPComment(String buildTags) {
       logger.log(Level.INFO, "Parse {0}", new Object[]{ buildTags });
-      List<String> availableBuildTags = new LinkedList<String>();
+      List<String> availableBuildTags = new LinkedList<String>(); 
       Matcher subBuildTagMatcher = SINGLE_BUILD_TAG_RX.matcher(buildTags);
       while(subBuildTagMatcher.find()) availableBuildTags.add(subBuildTagMatcher.group(0).trim());
       return availableBuildTags;
     }
-
+    
     public boolean hasMyBuildTagInTTPComment(String content, String buildKey) {
       Matcher tagsMatcher = BUILD_TAGS_RX.matcher(content);
       if (tagsMatcher.find()) {
@@ -175,16 +184,16 @@ public class BitbucketRepository {
         return this.getAvailableBuildTagsFromTTPComment(tagsMatcher.group(1).trim()).contains(this.getMyBuildTag(buildKey));
       }
       else return false;
-    }
-
-    private void postBuildTagInTTPComment(String pullRequestId, String content, String buildKey) {
+    }        
+    
+    private void postBuildTagInTTPComment(String pullRequestId, String content, String buildKey) {     
       logger.log(Level.INFO, "Update build tag for {0} build key", buildKey);
       List<String> builds = this.getAvailableBuildTagsFromTTPComment(content);
-      builds.add(this.getMyBuildTag(buildKey));
+      builds.add(this.getMyBuildTag(buildKey));      
       content += " " + String.format(CONTENT_PART_TEMPLATE, StringUtils.join(builds, " "));
       logger.log(Level.INFO, "Post comment: {0} with original content {1}", new Object[]{ content, this.client.postPullRequestComment(pullRequestId, content).getId() });
     }
-
+    
     private boolean isTTPComment(String content) {
         // special case: in unit tests, trigger is null and can't be mocked
         String commentTrigger = DEFAULT_COMMENT_TRIGGER;
@@ -193,27 +202,27 @@ public class BitbucketRepository {
         }
       return content.toLowerCase().contains(commentTrigger);
     }
-
+    
     private boolean isTTPCommentBuildTags(String content) {
       return content.toLowerCase().contains(BUILD_REQUEST_DONE_MARKER.toLowerCase());
     }
-
+    
     public List<Pullrequest.Comment> filterPullRequestComments(List<Pullrequest.Comment> comments) {
       logger.info("Filter PullRequest Comments.");
       Collections.sort(comments);
-      Collections.reverse(comments);
-      List<Pullrequest.Comment> filteredComments = new LinkedList<Pullrequest.Comment>();
+      Collections.reverse(comments);      
+      List<Pullrequest.Comment> filteredComments = new LinkedList<Pullrequest.Comment>();      
       for(Pullrequest.Comment comment : comments) {
         String content = comment.getContent();
-        if (content == null || content.isEmpty()) continue;
-        boolean isTTP = this.isTTPComment(content);
-        boolean isTTPBuild = this.isTTPCommentBuildTags(content);
+        if (content == null || content.isEmpty()) continue;        
+        boolean isTTP = this.isTTPComment(content);        
+        boolean isTTPBuild = this.isTTPCommentBuildTags(content);        
         if (isTTP || isTTPBuild)  filteredComments.add(comment);
         if (isTTP) break;
       }
       return filteredComments;
     }
-
+    
     private boolean isBuildTarget(Pullrequest pullRequest) {
         if (pullRequest.getState() != null && pullRequest.getState().equals("OPEN")) {
             if (isSkipBuild(pullRequest.getTitle()) || !isFilteredBuild(pullRequest)) {
@@ -232,8 +241,8 @@ public class BitbucketRepository {
             final boolean commitAlreadyBeenProcessed = this.client.hasBuildStatus(
               sourceRepository.getOwnerName(), sourceRepository.getRepositoryName(), sourceCommit, buildKeyPart
             );
-            if (commitAlreadyBeenProcessed) logger.log(Level.INFO,
-              "Commit {0}#{1} has already been processed",
+            if (commitAlreadyBeenProcessed) logger.log(Level.INFO, 
+              "Commit {0}#{1} has already been processed", 
               new Object[]{ sourceCommit, buildKeyPart }
             );
             
@@ -246,18 +255,18 @@ public class BitbucketRepository {
                 boolean hasMyBuildTag = false;
                 for (Pullrequest.Comment comment : filteredComments) {
                     String content = comment.getContent();
-                    if (this.isTTPComment(content)) {
+                    if (this.isTTPComment(content)) {  
                         rebuildCommentAvailable = true;
-                        logger.log(Level.INFO,
-                          "Rebuild comment available for commit {0} and comment #{1}",
+                        logger.log(Level.INFO, 
+                          "Rebuild comment available for commit {0} and comment #{1}", 
                           new Object[]{ sourceCommit, comment.getId() }
-                        );
+                        );                        
                     }
                     if (isTTPCommentBuildTags(content))
                         hasMyBuildTag |= this.hasMyBuildTagInTTPComment(content, buildKeyPart);
                 }
                 rebuildCommentAvailable &= !hasMyBuildTag;
-            }
+            }            
             if (rebuildCommentAvailable) this.postBuildTagInTTPComment(id, "TTP build flag", buildKeyPart);
 
             final boolean canBuildTarget = rebuildCommentAvailable || !commitAlreadyBeenProcessed;
@@ -295,17 +304,17 @@ public class BitbucketRepository {
           pullRequest.getDestination().getCommit().getHash(),
           pullRequest.getAuthor().getCombinedUsername()
         );
-
+        
         //@FIXME: Way to iterate over all available SCMSources
         List<SCMSource> sources = new LinkedList<SCMSource>();
         for(SCMSourceOwner owner : SCMSourceOwners.all())
           for(SCMSource src : owner.getSCMSources())
-            sources.add(src);
-
-        BitbucketBuildFilter filter = !this.trigger.getBranchesFilterBySCMIncludes() ?
-          BitbucketBuildFilter.InstanceByString(this.trigger.getBranchesFilter()) :
-          BitbucketBuildFilter.InstanceBySCM(sources, this.trigger.getBranchesFilter());
-
+            sources.add(src);                
+        
+        BitbucketBuildFilter filter = !this.trigger.getBranchesFilterBySCMIncludes() ? 
+          BitbucketBuildFilter.instanceByString(this.trigger.getBranchesFilter()) :
+          BitbucketBuildFilter.instanceBySCM(sources, this.trigger.getBranchesFilter());
+        
         return filter.approved(cause);
     }
 

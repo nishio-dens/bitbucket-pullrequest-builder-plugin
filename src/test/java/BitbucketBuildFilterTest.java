@@ -47,12 +47,12 @@ public class BitbucketBuildFilterTest {
     EasyMock.replay(cause);
       
     for(String f : new String[] {"", "*", "any"}) {
-      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      BitbucketBuildFilter filter = BitbucketBuildFilter.instanceByString(f);
       assertTrue(filter.approved(cause));
     }
     
     for(String f : new String[] {"foo", "bar", " baz "}) {
-      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      BitbucketBuildFilter filter = BitbucketBuildFilter.instanceByString(f);
       assertFalse(filter.approved(cause));
     }
   }
@@ -65,12 +65,12 @@ public class BitbucketBuildFilterTest {
     EasyMock.replay(cause);
     
     for(String f : new String[] {"master-branch", "r:^master", "r:branch$", " master-branch "}) {
-      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      BitbucketBuildFilter filter = BitbucketBuildFilter.instanceByString(f);
       assertTrue(filter.approved(cause));
     }
     
     for(String f : new String[] {"develop", "feature-good-thing", "r:develop$"}) {
-      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      BitbucketBuildFilter filter = BitbucketBuildFilter.instanceByString(f);
       assertFalse(filter.approved(cause));
     }
   }
@@ -94,12 +94,12 @@ public class BitbucketBuildFilterTest {
     EasyMock.replay(cause);
     
     for(String f : new String[] {"s:feature-for-master d:master", "s:r:^feature d:master", "s:feature-for-master d:r:^m", "s:r:^feature d:r:^master"}) {
-      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      BitbucketBuildFilter filter = BitbucketBuildFilter.instanceByString(f);
       assertTrue(filter.approved(cause));
     }
     
     for(String f : new String[] {"s:feature-for-master d:foo", "s:bar d:master", "s:foo d:bar"}) {
-      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      BitbucketBuildFilter filter = BitbucketBuildFilter.instanceByString(f);
       assertFalse(filter.approved(cause));
     }
   }
@@ -113,12 +113,12 @@ public class BitbucketBuildFilterTest {
     EasyMock.replay(cause);
     
     for(String f : new String[] {"s: d:", "s:r:^feature s:good-branch d:r:.*", "s:good-branch s:feature-master d:r:.*", "s: d:r:.*", "d:master d:foo d:bar s:"}) {
-      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      BitbucketBuildFilter filter = BitbucketBuildFilter.instanceByString(f);
       assertTrue(filter.approved(cause));
     }
     
     for(String f : new String[] {"d:ggg d:ooo d:333 s:feature-master", "s:111 s:222 s:333 d:master"}) {
-      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      BitbucketBuildFilter filter = BitbucketBuildFilter.instanceByString(f);
       assertFalse(filter.approved(cause));
     }
   }
@@ -132,12 +132,12 @@ public class BitbucketBuildFilterTest {
     EasyMock.replay(cause);
     
     for(String f : new String[] {"s:feature-master d:", "d:master s:"}) {
-      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      BitbucketBuildFilter filter = BitbucketBuildFilter.instanceByString(f);
       assertTrue(filter.approved(cause));
     }
     
     for(String f : new String[] {"s:feature-master", "d:master"}) {
-      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      BitbucketBuildFilter filter = BitbucketBuildFilter.instanceByString(f);
       assertFalse(filter.approved(cause));
     }
   }
@@ -152,12 +152,12 @@ public class BitbucketBuildFilterTest {
     EasyMock.replay(cause);
     
     for(String f : new String[] {"a:test", "a:r:^test", "d: s: a:", "a:", "a:foo a:test"}) {
-      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      BitbucketBuildFilter filter = BitbucketBuildFilter.instanceByString(f);
       assertTrue(filter.approved(cause));
     }
     
     for(String f : new String[] {"s:feature-master", "d:master", "s:feature-master d: a:foo", "a:bar"}) {
-      BitbucketBuildFilter filter = BitbucketBuildFilter.InstanceByString(f);      
+      BitbucketBuildFilter filter = BitbucketBuildFilter.instanceByString(f);
       assertFalse(filter.approved(cause));
     }
   }
@@ -169,11 +169,11 @@ public class BitbucketBuildFilterTest {
     EasyMock.expect(cause.getTargetBranch()).andReturn("master").anyTimes();
     EasyMock.replay(cause);
     
-    assertTrue(BitbucketBuildFilter.FilterFromGitSCMSource(null, "").isEmpty());
-    assertEquals("default", BitbucketBuildFilter.FilterFromGitSCMSource(null, "default"));
+    assertTrue(BitbucketBuildFilter.filterFromGitSCMSource(null, "").isEmpty());
+    assertEquals("default", BitbucketBuildFilter.filterFromGitSCMSource(null, "default"));
     
-    assertTrue(BitbucketBuildFilter.InstanceByString(
-      BitbucketBuildFilter.FilterFromGitSCMSource(null, "")).approved(cause)
+    assertTrue(BitbucketBuildFilter.instanceByString(
+      BitbucketBuildFilter.filterFromGitSCMSource(null, "")).approved(cause)
     );
   }
   
@@ -189,9 +189,9 @@ public class BitbucketBuildFilterTest {
     EasyMock.replay(git);
     
     assertTrue(git.getIncludes().isEmpty());    
-    assertEquals("", BitbucketBuildFilter.FilterFromGitSCMSource(git, ""));
-    assertEquals("d:master d:feature-branch", BitbucketBuildFilter.FilterFromGitSCMSource(git, ""));
-    assertEquals("d:master", BitbucketBuildFilter.FilterFromGitSCMSource(git, ""));
+    assertEquals("", BitbucketBuildFilter.filterFromGitSCMSource(git, ""));
+    assertEquals("d:master d:feature-branch", BitbucketBuildFilter.filterFromGitSCMSource(git, ""));
+    assertEquals("d:master", BitbucketBuildFilter.filterFromGitSCMSource(git, ""));
   }
   
   @Test

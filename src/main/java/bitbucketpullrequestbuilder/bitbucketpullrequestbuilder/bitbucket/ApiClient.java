@@ -58,7 +58,7 @@ public class ApiClient {
 
             if (Jenkins.getInstance() == null) return client;
 
-            ProxyConfiguration proxy = Jenkins.getInstance().proxy;
+            ProxyConfiguration proxy = getInstance().proxy;
             if (proxy == null) return client;
 
             logger.log(Level.INFO, "Jenkins proxy: {0}:{1}", new Object[]{ proxy.name, proxy.port });
@@ -75,7 +75,17 @@ public class ApiClient {
             
             return client;
         }
+
+        private Jenkins getInstance() {
+            final Jenkins instance = Jenkins.getInstance();
+            if (instance == null){
+                throw new IllegalStateException("Jenkins instance is NULL!");
+            }
+            return instance;
+        }
     }
+
+
     
     public <T extends HttpClientFactory> ApiClient(
         String username, String password, 

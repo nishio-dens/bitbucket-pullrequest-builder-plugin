@@ -9,7 +9,7 @@ This Jenkins plugin builds pull requests from Bitbucket.org and will report the 
 Prerequisites
 -------------
 
-- Jenkins 1.509.4 or higher.
+- Jenkins 1.625.3 or higher.
 - https://wiki.jenkins-ci.org/display/JENKINS/Git+Plugin
 
 
@@ -72,6 +72,10 @@ Environment Variables Provided
 Contributing to Bitbucket Pull Request Builder Plugin
 -----------------------------------------------------
 
+- Do not use Fork [jenkinsci/bitbucket-pullrequest-builder-plugin](https://github.com/jenkinsci/bitbucket-pullrequest-builder-plugin) for contribution
+
+- Use project [nishio-dens/bitbucket-pullrequest-builder-plugin](https://github.com/nishio-dens/bitbucket-pullrequest-builder-plugin)
+
 - Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet.
 
 - Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it.
@@ -83,10 +87,20 @@ Contributing to Bitbucket Pull Request Builder Plugin
 - Commit and push until you are happy with your contribution.
 
 
+
+Donations
+-----------------------------------------------------
+Do you like this plugin? feel free to donate! 
+
+Paypal: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=LTXCF78GJ7224
+BTC: 1KgwyVzefeNzJhuzqLq36E3bZi2WFjibMr
+
+Thank you!
+
 Copyright
 ---------
 
-Copyright © 2014 S.nishio. 
+Copyright © 2014 S.nishio + Martin Damovsky
 
 
 License

@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -212,6 +213,7 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
     private void cancelPreviousJobsInQueueThatMatch(@Nonnull BitbucketCause bitbucketCause) {
         logger.fine("Looking for queued jobs that match PR ID: " + bitbucketCause.getPullRequestId());
         Queue queue = getInstance().getQueue();
+
         for (Queue.Item item : queue.getItems()) {
             if (hasCauseFromTheSamePullRequest(item.getCauses(), bitbucketCause)) {
                 logger.info("Canceling item in queue: " + item);
@@ -231,10 +233,11 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
     private void abortRunningJobsThatMatch(@Nonnull BitbucketCause bitbucketCause) {
         logger.fine("Looking for running jobs that match PR ID: " + bitbucketCause.getPullRequestId());
         for (Object o : job.getBuilds()) {
-            if (o instanceof Build) {
-                Build build = (Build) o;
+            if (o instanceof Run) {
+                Run build = (Run) o;
                 if (build.isBuilding() && hasCauseFromTheSamePullRequest(build.getCauses(), bitbucketCause)) {
                     logger.info("Aborting build: " + build + " since PR is outdated");
+                    setBuildDescription(build);
                     final Executor executor = build.getExecutor();
                     if (executor == null){
                         throw new IllegalStateException("Executor can't be NULL");
@@ -242,6 +245,14 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
                     executor.interrupt(Result.ABORTED);
                 }
             }
+        }
+    }
+
+    private void setBuildDescription(final Run build) {
+        try {
+            build.setDescription("Aborting build by `Bitbucket Pullrequest Builder Plugin`: " + build + " since PR is outdated");
+        } catch (IOException e) {
+            logger.warning("Can't set up build description due to an IOException: " + e.getMessage());
         }
     }
 

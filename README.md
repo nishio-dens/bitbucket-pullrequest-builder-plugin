@@ -93,6 +93,7 @@ Donations
 Do you like this plugin? feel free to donate! 
 
 Paypal: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=LTXCF78GJ7224
+
 BTC: 1KgwyVzefeNzJhuzqLq36E3bZi2WFjibMr
 
 Thank you!

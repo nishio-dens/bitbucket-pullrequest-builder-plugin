@@ -294,7 +294,7 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
     	if (project instanceof AbstractProject && ((AbstractProject)project).isDisabled()) {
     		logger.info("Build Skip.");
     	} else {
-    		this.bitbucketPullRequestsBuilder.run();
+    		this.bitbucketPullRequestsBuilder.run(project);
             this.getDescriptor().save();
     	}
     }

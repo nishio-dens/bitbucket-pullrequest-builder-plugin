@@ -5,6 +5,7 @@ import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketBuildTri
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketPullRequestsBuilder;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketRepository;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
+import hudson.model.Job;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
@@ -229,7 +230,7 @@ public class BitbucketBuildRepositoryTest {
     EasyMock.replay(builder);
     
     BitbucketRepository repo = new BitbucketRepository("", builder);
-    repo.init();       
+    repo.init((Job<?, ?>) null);       
     
     for(String projectId : projectIds) {
       String hashMD5 = new String(Hex.encodeHex(MD5.digest(projectId.getBytes("UTF-8"))));
@@ -264,7 +265,7 @@ public class BitbucketBuildRepositoryTest {
     EasyMock.replay(builder);       
     
     BitbucketRepository repo = new BitbucketRepository("", builder);
-    repo.init();
+    repo.init((Job<?, ?>) null);
     
     String buildStatusKey = repo.getClient().buildStatusKey(builder.getProjectId());
     assertTrue(buildStatusKey.length() <= ApiClient.MAX_KEY_SIZE_BB_API);

@@ -31,9 +31,9 @@ public class BitbucketPullRequestsBuilder {
         // TODO?
     }
 
-    public void run() {
+    public void run(Job<?,?> project) {
         logger.info("Build Start.");
-        this.repository.init();
+        this.repository.init(project);
         Collection<Pullrequest> targetPullRequests = this.repository.getTargetPullRequests();
         this.repository.addFutureBuildTasks(targetPullRequests);
     }

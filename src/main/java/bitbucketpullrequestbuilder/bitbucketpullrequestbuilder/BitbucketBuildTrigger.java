@@ -1,15 +1,19 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
 import antlr.ANTLRException;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
-import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.google.common.collect.ImmutableList;
+
 import hudson.Extension;
 import hudson.model.*;
 import hudson.model.Queue;
 import hudson.model.queue.QueueTaskFuture;
+import hudson.model.queue.Tasks;
 import hudson.plugins.git.RevisionParameterAction;
+import hudson.security.ACL;
 import hudson.triggers.Trigger;
 import hudson.triggers.TriggerDescriptor;
 import hudson.util.ListBoxModel;
@@ -17,6 +21,7 @@ import jenkins.model.Jenkins;
 import jenkins.model.ParameterizedJobMixIn;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -320,11 +325,17 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
             return super.configure(req, json);
         }
 
-        public ListBoxModel doFillCredentialsIdItems() {
-            return new StandardListBoxModel()
-                    .withEmptySelection()
-                    .withMatching(instanceOf(UsernamePasswordCredentials.class),
-                            CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class));
+        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath Item project) {
+        	return new StandardListBoxModel()
+                    .includeEmptyValue()
+                    .includeMatchingAs(
+                            project instanceof Queue.Task
+                                    ? Tasks.getAuthenticationOf((Queue.Task) project)
+                                    : ACL.SYSTEM,
+                            project,
+                            StandardUsernameCredentials.class,
+                            ImmutableList.<DomainRequirement>of(),
+                            instanceOf(UsernamePasswordCredentials.class));
         }
     }
 }

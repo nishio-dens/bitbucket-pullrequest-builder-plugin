@@ -11,7 +11,7 @@ import org.codehaus.jackson.annotate.JsonProperty;
  * POJOs representing the pull-requests extracted from the
  * JSON response of the Bitbucket API V2.
  *
- * @see https://confluence.atlassian.com/bitbucket/pullrequests-resource-423626332.html#pullrequestsResource-GETaspecificpullrequest
+ * @see "https://confluence.atlassian.com/bitbucket/pullrequests-resource-423626332.html#pullrequestsResource-GETaspecificpullrequest"
  */
 
 @JsonIgnoreProperties(ignoreUnknown = true)

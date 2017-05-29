@@ -17,6 +17,7 @@ import jenkins.model.Jenkins;
 import jenkins.model.ParameterizedJobMixIn;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -56,7 +57,6 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
 
     transient private BitbucketPullRequestsBuilder bitbucketPullRequestsBuilder;
 
-    @Extension
     public static final BitbucketBuildTriggerDescriptor descriptor = new BitbucketBuildTriggerDescriptor();
 
     @DataBoundConstructor
@@ -299,6 +299,8 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
         super.stop();
     }
 
+    @Extension
+    @Symbol("bitbucketpr")
     public static final class BitbucketBuildTriggerDescriptor extends TriggerDescriptor {
         public BitbucketBuildTriggerDescriptor() {
             load();

@@ -216,7 +216,7 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
 
         for (Queue.Item item : queue.getItems()) {
             if (hasCauseFromTheSamePullRequest(item.getCauses(), bitbucketCause)) {
-                logger.info("Canceling item in queue: " + item);
+                logger.fine("Canceling item in queue: " + item);
                 queue.cancel(item);
             }
         }
@@ -236,7 +236,7 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
             if (o instanceof Run) {
                 Run build = (Run) o;
                 if (build.isBuilding() && hasCauseFromTheSamePullRequest(build.getCauses(), bitbucketCause)) {
-                    logger.info("Aborting build: " + build + " since PR is outdated");
+                    logger.fine("Aborting build: " + build + " since PR is outdated");
                     setBuildDescription(build);
                     final Executor executor = build.getExecutor();
                     if (executor == null){
@@ -287,7 +287,7 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
     public void run() {
     	Job<?,?> project = this.getBuilder().getProject();
     	if (project instanceof AbstractProject && ((AbstractProject)project).isDisabled()) {
-    		logger.info("Build Skip.");
+    		logger.fine("Build Skip.");
     	} else {
     		this.bitbucketPullRequestsBuilder.run();
             this.getDescriptor().save();

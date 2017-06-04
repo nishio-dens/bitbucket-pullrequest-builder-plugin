@@ -56,7 +56,7 @@ class HttpClientInterceptor<T extends ICredentialsInterceptor> extends HttpClien
     
     @Override
     public synchronized void setCredentials(AuthScope authscope, Credentials credentials) {      
-      logger.info("Inject setCredentials");
+      logger.fine("Inject setCredentials");
       super.setCredentials(authscope, credentials);
       this.interceptor.assertCredentials(credentials);
       throw new AssertionError();
@@ -82,7 +82,7 @@ class AssertCredentials implements ICredentialsInterceptor {
   public AssertCredentials(Credentials expected) { this.expected = expected; }
 
   public void assertCredentials(Credentials actual) {
-    logger.info("Assert credential");
+    logger.fine("Assert credential");
     if (actual == null) assertTrue(this.expected == null); 
                    else assertTrue(this.expected != null);        
 

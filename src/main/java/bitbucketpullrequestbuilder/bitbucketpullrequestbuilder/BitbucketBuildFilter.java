@@ -46,7 +46,7 @@ abstract class Filter {
     boolean apply = false;
     while (srcMatch.find()) {
       String computedFilter = ((srcMatch.group(1) == null ? "" : srcMatch.group(1)) + srcMatch.group(2)).trim();
-      logger.log(Level.INFO, "Apply computed filter: {0}", computedFilter);
+      logger.log(Level.FINE, "Apply computed filter: {0}", computedFilter);
       apply = apply || (computedFilter.isEmpty() ? true : usedFilter.apply(computedFilter, cause));
     }
     return apply;
@@ -71,7 +71,7 @@ class OnlySourceFlag extends Filter {
   @Override
   public boolean apply(String filter, BitbucketCause cause) { 
     String selectedRx = filter.startsWith(RX_FILTER_FLAG_SINGLE) ? filter.substring(RX_FILTER_FLAG_SINGLE.length()) : Pattern.quote(filter);    
-    logger.log(Level.INFO, "OnlySourceFlag using filter: {0}", selectedRx);
+    logger.log(Level.FINE, "OnlySourceFlag using filter: {0}", selectedRx);
     Matcher matcher = Pattern.compile(selectedRx, Pattern.CASE_INSENSITIVE).matcher(cause.getSourceBranch());
     return filter.startsWith(RX_FILTER_FLAG_SINGLE) ? matcher.find() : matcher.matches();
   } 
@@ -85,7 +85,7 @@ class OnlyDestFlag extends Filter {
   @Override
   public boolean apply(String filter, BitbucketCause cause) { 
     String selectedRx = filter.startsWith(RX_FILTER_FLAG_SINGLE) ? filter.substring(RX_FILTER_FLAG_SINGLE.length()) : Pattern.quote(filter);
-    logger.log(Level.INFO, "OnlyDestFlag using filter: {0}", selectedRx);
+    logger.log(Level.FINE, "OnlyDestFlag using filter: {0}", selectedRx);
     Matcher matcher = Pattern.compile(selectedRx, Pattern.CASE_INSENSITIVE).matcher(cause.getTargetBranch());
     return filter.startsWith(RX_FILTER_FLAG_SINGLE) ? matcher.find() : matcher.matches();
   } 
@@ -117,7 +117,7 @@ class AuthorFlag extends Filter {
     @Override
     public boolean apply(String filter, BitbucketCause cause) { 
       String selectedRx = filter.startsWith(RX_FILTER_FLAG_SINGLE) ? filter.substring(RX_FILTER_FLAG_SINGLE.length()) : Pattern.quote(filter);
-      logger.log(Level.INFO, "AuthorFlagImpl using filter: {0}", selectedRx);
+      logger.log(Level.FINE, "AuthorFlagImpl using filter: {0}", selectedRx);
       Matcher matcher = Pattern.compile(selectedRx, Pattern.CASE_INSENSITIVE).matcher(cause.getPullRequestAuthor());
       return filter.startsWith(RX_FILTER_FLAG_SINGLE) ? matcher.find() : matcher.matches();
     } 
@@ -188,29 +188,29 @@ public class BitbucketBuildFilter {
   }
   
   private void buildFilter(String filter) {
-    logger.log(Level.INFO, "Build filter by phrase: {0}", filter);
+    logger.log(Level.FINE, "Build filter by phrase: {0}", filter);
     for(Filter f : AvailableFilters) {
       if (f.check(filter)) {
         this.currFilter = f;
-        logger.log(Level.INFO, "Using filter: {0}", f.getClass().getSimpleName());
+        logger.log(Level.FINE, "Using filter: {0}", f.getClass().getSimpleName());
         break;
       }
     }  
   }
   
   public boolean approved(BitbucketCause cause) {    
-    logger.log(Level.INFO, "Approve cause: {0}", cause.toString());
+    logger.log(Level.FINE, "Approve cause: {0}", cause.toString());
     return this.currFilter.apply(this.filter, cause);
   }  
   
   public static BitbucketBuildFilter instanceByString(String filter) {
-    logger.log(Level.INFO, "Filter instance by filter string");
+    logger.log(Level.FINE, "Filter instance by filter string");
     return new BitbucketBuildFilter(filter);
   }    
   
   static public String filterFromGitSCMSource(AbstractGitSCMSource gitscm, String defaultFilter) {
     if (gitscm == null) {
-      logger.log(Level.INFO, "Git SCMSource unavailable. Using default value: {0}", defaultFilter);
+      logger.log(Level.FINE, "Git SCMSource unavailable. Using default value: {0}", defaultFilter);
       return defaultFilter;
     }
 
@@ -222,15 +222,15 @@ public class BitbucketBuildFilter {
       }
     }    
     
-    logger.log(Level.INFO, "Git includes transformation to filter result: {1} -> {0}; default: {2}", new Object[]{ filter, includes, defaultFilter });
+    logger.log(Level.FINE, "Git includes transformation to filter result: {1} -> {0}; default: {2}", new Object[]{ filter, includes, defaultFilter });
     return filter.toString().trim();
   }
   
   public static BitbucketBuildFilter instanceBySCM(Collection<SCMSource> scmSources, String defaultFilter) {
-    logger.log(Level.INFO, "Filter instance by using SCMSources list with {0} items", scmSources.size());
+    logger.log(Level.FINE, "Filter instance by using SCMSources list with {0} items", scmSources.size());
     AbstractGitSCMSource gitscm = null;
     for(SCMSource scm : scmSources) {
-      logger.log(Level.INFO, "Check {0} SCMSource ", scm.getClass());
+      logger.log(Level.FINE, "Check {0} SCMSource ", scm.getClass());
       if (scm instanceof AbstractGitSCMSource) {
         gitscm = (AbstractGitSCMSource)scm;
         break;

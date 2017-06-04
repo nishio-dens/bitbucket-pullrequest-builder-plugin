@@ -32,6 +32,35 @@ Creating a Job
 - Save to preserve your changes
 
 
+Jenkins pipeline
+-------------
+```
+pipeline {
+    agent any
+    triggers{
+        bitbucketpr(projectPath:'<BIT_BUCKET_PATH>',
+        cron:'H/15 * * * *',
+        credentialsId:'',
+        username:'',
+        password:'',
+        repositoryOwner:'',
+        repositoryName:'',
+        branchesFilter:'',
+        branchesFilterBySCMIncludes:false,
+        ciKey:'',
+        ciName:'',
+        ciSkipPhrases:'',
+        checkDestinationCommit:false,
+        approveIfSuccess:false,
+        cancelOutdatedJobs:true,
+        commentTrigger:'')
+    }
+}
+```
+
+After you set up your Jenkins pipeline, run the job for the first time manually (otherwise the trigger may not work!)
+
+
 Merge the Pull Request's Source Branch into the Target Branch Before Building
 -----------------------------------------------------------------------------
 

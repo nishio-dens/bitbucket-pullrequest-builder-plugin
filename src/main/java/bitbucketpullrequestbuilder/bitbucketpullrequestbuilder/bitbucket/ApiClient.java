@@ -256,8 +256,12 @@ public class ApiClient {
         client.getState().setCredentials(AuthScope.ANY, credentials);
         client.getParams().setAuthenticationPreemptive(true);
         try {
-            client.executeMethod(req);
-            return req.getResponseBodyAsString();
+            int statusCode = client.executeMethod(req);
+            if (statusCode != HttpStatus.SC_OK) {
+                logger.log(Level.WARNING, "Response code failed: " + req.getStatusLine());
+            }else{
+                return req.getResponseBodyAsString();
+            }
         } catch (HttpException e) {
             logger.log(Level.WARNING, "Failed to send request.", e);
         } catch (IOException e) {

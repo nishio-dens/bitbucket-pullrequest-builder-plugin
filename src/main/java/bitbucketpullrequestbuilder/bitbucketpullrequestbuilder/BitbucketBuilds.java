@@ -19,6 +19,7 @@ public class BitbucketBuilds {
     public BitbucketBuilds(BitbucketBuildTrigger trigger, BitbucketRepository repository) {
         this.trigger = trigger;
         this.repository = repository;
+        this.repository.init();
     }
 
     void onStarted(BitbucketCause cause, Run<?, ?> build) {

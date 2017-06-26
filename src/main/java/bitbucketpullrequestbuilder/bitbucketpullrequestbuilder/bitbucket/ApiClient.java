@@ -142,7 +142,8 @@ public class ApiClient {
 
     public boolean hasBuildStatus(String owner, String repositoryName, String revision, String keyEx) {
         String url = v2(owner, repositoryName, "/commit/" + revision + "/statuses/build/" + this.computeAPIKey(keyEx));
-        return get(url).contains("\"state\"");
+        String reqBody = get(url);
+        return reqBody != null && reqBody.contains("\"state\"");
     }
 
     public void setBuildStatus(String owner, String repositoryName, String revision, BuildState state, String buildUrl, String comment, String keyEx) {
@@ -258,7 +259,7 @@ public class ApiClient {
         try {
             int statusCode = client.executeMethod(req);
             if (statusCode != HttpStatus.SC_OK) {
-                logger.log(Level.WARNING, "Response code failed: " + req.getStatusLine());
+                logger.log(Level.WARNING, "Response status: " + req.getStatusLine()+" URI: "+req.getURI());
             }else{
                 return req.getResponseBodyAsString();
             }

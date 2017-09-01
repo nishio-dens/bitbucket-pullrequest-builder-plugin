@@ -43,6 +43,7 @@ public class BitbucketPullRequestsBuilder {
             throw new IllegalStateException();
         }
         this.repository = new BitbucketRepository(this.trigger.getProjectPath(), this);
+        this.repository.init();
         this.builds = new BitbucketBuilds(this.trigger, this.repository);
         return this;
     }

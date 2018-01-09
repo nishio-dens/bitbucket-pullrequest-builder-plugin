@@ -11,6 +11,8 @@ import org.codehaus.jackson.map.type.TypeFactory;
 import org.codehaus.jackson.type.JavaType;
 import org.codehaus.jackson.type.TypeReference;
 
+import com.google.common.base.Strings;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -199,16 +201,18 @@ public class ApiClient {
 
     private <T> List<T> getAllValues(String rootUrl, int pageLen, Class<T> cls) {
         List<T> values = new ArrayList<T>();
+        String responseStr = "";
         try {
             String url = rootUrl + "?pagelen=" + pageLen;
             do {
                 final JavaType type = TypeFactory.defaultInstance().constructParametricType(Pullrequest.Response.class, cls);
-                Pullrequest.Response<T> response = parse(get(url), type);
+                responseStr = get(url);
+                Pullrequest.Response<T> response = parse(responseStr, type);
                 values.addAll(response.getValues());
                 url = response.getNext();
             } while (url != null);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "invalid response.", e);
+            logger.log(Level.WARNING, "invalid response. " + Strings.nullToEmpty(responseStr), e);
         }
         return values;
     }
@@ -272,7 +276,12 @@ public class ApiClient {
         return new ObjectMapper().readValue(response, cls);
     }
     private <R> R parse(String response, JavaType type) throws IOException {
-        return new ObjectMapper().readValue(response, type);
+    	try {
+    		return new ObjectMapper().readValue(response, type);
+    	} catch (Exception e) {
+    		logger.log(Level.WARNING, response);
+    		throw e;
+    	}
     }
     private <R> R parse(String response, TypeReference<R> ref) throws IOException {
         return new ObjectMapper().readValue(response, ref);

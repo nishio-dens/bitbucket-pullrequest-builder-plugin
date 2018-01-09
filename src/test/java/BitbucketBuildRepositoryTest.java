@@ -7,6 +7,7 @@ import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketReposito
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
 import hudson.model.Job;
 
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsStore;
@@ -19,8 +20,10 @@ import com.google.common.collect.Collections2;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.logging.Logger;
 import org.easymock.*;
 import org.junit.Test;
@@ -30,7 +33,6 @@ import org.junit.Assert;
 import org.jvnet.hudson.test.JenkinsRule;
 
 import jenkins.model.Jenkins;
-import org.jvnet.hudson.test.WithoutJenkins;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.httpclient.Credentials;
@@ -57,7 +59,7 @@ class HttpClientInterceptor<T extends ICredentialsInterceptor> extends HttpClien
     
     @Override
     public synchronized void setCredentials(AuthScope authscope, Credentials credentials) {      
-      logger.info("Inject setCredentials");
+      logger.fine("Inject setCredentials");
       super.setCredentials(authscope, credentials);
       this.interceptor.assertCredentials(credentials);
       throw new AssertionError();
@@ -83,7 +85,7 @@ class AssertCredentials implements ICredentialsInterceptor {
   public AssertCredentials(Credentials expected) { this.expected = expected; }
 
   public void assertCredentials(Credentials actual) {
-    logger.info("Assert credential");
+    logger.fine("Assert credential");
     if (actual == null) assertTrue(this.expected == null); 
                    else assertTrue(this.expected != null);        
 
@@ -107,7 +109,7 @@ public class BitbucketBuildRepositoryTest {
 
   @Rule
   public JenkinsRule jRule = new JenkinsRule();  
-  
+
   @Test  
   public void repositorySimpleUserPasswordTest() throws Exception {
     BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
@@ -271,5 +273,83 @@ public class BitbucketBuildRepositoryTest {
     assertTrue(buildStatusKey.length() <= ApiClient.MAX_KEY_SIZE_BB_API);
     assertFalse(buildStatusKey.startsWith("jenkins-"));
     assertEquals((new SHA1HasherFunction(SHA1)).apply("jenkins-too-long-ci-key" + "-" + builder.getProjectId()), buildStatusKey);
+  }
+
+  @Test
+  public void getTargetPullRequestsWithNullDestinationCommit() throws Exception {
+    // arrange
+
+    // setup mock BitbucketBuildTrigger
+    final BitbucketBuildTrigger trigger = EasyMock.createMock(BitbucketBuildTrigger.class);
+    EasyMock.expect(trigger.getCiSkipPhrases()).andReturn("");
+    EasyMock.expect(trigger.getBranchesFilterBySCMIncludes()).andReturn(false);
+    EasyMock.expect(trigger.getBranchesFilter()).andReturn("");
+    EasyMock.replay(trigger);
+
+    // setup mock BitbucketPullRequestsBuilder
+    final BitbucketPullRequestsBuilder builder = EasyMock.createMock(BitbucketPullRequestsBuilder.class);
+    EasyMock.expect(builder.getTrigger()).andReturn(trigger).anyTimes();
+    EasyMock.expect(builder.getProjectId()).andReturn("").anyTimes();
+    EasyMock.replay(builder);
+
+    // setup PRs to return from mock ApiClient
+    final Pullrequest pullRequest = new Pullrequest();
+
+    final Pullrequest.Repository sourceRepo = new Pullrequest.Repository();
+    sourceRepo.setFullName("Owner/Name");
+
+    final Pullrequest.Repository destRepo = new Pullrequest.Repository();
+    destRepo.setFullName("Owner/Name");
+
+    final Pullrequest.Branch sourceBranch = new Pullrequest.Branch();
+    sourceBranch.setName("Name");
+
+    final Pullrequest.Branch destBranch = new Pullrequest.Branch();
+    destBranch.setName("Name");
+
+    final Pullrequest.Commit sourceCommit = new Pullrequest.Commit();
+    sourceCommit.setHash("Hash");
+
+    final Pullrequest.Commit destCommit = null; // the crux of the test
+
+    final Pullrequest.Revision sourceRevision = new Pullrequest.Revision();
+    sourceRevision.setBranch(sourceBranch);
+    sourceRevision.setRepository(sourceRepo);
+    sourceRevision.setCommit(sourceCommit);
+
+    final Pullrequest.Revision destRevision = new Pullrequest.Revision();
+    destRevision.setBranch(destBranch);
+    destRevision.setRepository(destRepo);
+    destRevision.setCommit(destCommit);
+
+    final Pullrequest.Author author = new Pullrequest.Author();
+    author.setDisplayName("DisplayName");
+    author.setUsername("Username");
+
+    pullRequest.setSource(sourceRevision);
+    pullRequest.setDestination(destRevision);
+    pullRequest.setId("Id");
+    pullRequest.setTitle("Title");
+    pullRequest.setState("OPEN");
+    pullRequest.setAutohor(author);
+
+    final List<Pullrequest> pullRequests = new ArrayList<>(Arrays.asList(pullRequest));
+
+    // setup mock ApiClient
+    final ApiClient client = EasyMock.createNiceMock(ApiClient.class);
+    EasyMock.expect(client.getPullRequests()).andReturn(pullRequests);
+    EasyMock.replay(client);
+
+    // setup SUT
+    final BitbucketRepository repo = new BitbucketRepository("", builder);
+
+    // act
+    repo.init(client);
+
+    // assert
+    Collection<Pullrequest> targetPullRequests = repo.getTargetPullRequests();
+
+    assertEquals(pullRequests.size(), targetPullRequests.size());
+    assertEquals(pullRequest, targetPullRequests.iterator().next());
   }
 }

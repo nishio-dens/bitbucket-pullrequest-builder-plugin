@@ -22,6 +22,7 @@ import jenkins.model.ParameterizedJobMixIn;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -61,7 +62,6 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
 
     transient private BitbucketPullRequestsBuilder bitbucketPullRequestsBuilder;
 
-    @Extension
     public static final BitbucketBuildTriggerDescriptor descriptor = new BitbucketBuildTriggerDescriptor();
 
     @DataBoundConstructor
@@ -221,7 +221,7 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
 
         for (Queue.Item item : queue.getItems()) {
             if (hasCauseFromTheSamePullRequest(item.getCauses(), bitbucketCause)) {
-                logger.info("Canceling item in queue: " + item);
+                logger.fine("Canceling item in queue: " + item);
                 queue.cancel(item);
             }
         }
@@ -241,7 +241,7 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
             if (o instanceof Run) {
                 Run build = (Run) o;
                 if (build.isBuilding() && hasCauseFromTheSamePullRequest(build.getCauses(), bitbucketCause)) {
-                    logger.info("Aborting build: " + build + " since PR is outdated");
+                    logger.fine("Aborting build: " + build + " since PR is outdated");
                     setBuildDescription(build);
                     final Executor executor = build.getExecutor();
                     if (executor == null){
@@ -292,7 +292,7 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
     public void run() {
     	Job<?,?> project = this.getBuilder().getProject();
     	if (project instanceof AbstractProject && ((AbstractProject)project).isDisabled()) {
-    		logger.info("Build Skip.");
+    		logger.fine("Build Skip.");
     	} else {
     		this.bitbucketPullRequestsBuilder.run(project);
             this.getDescriptor().save();
@@ -304,6 +304,8 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
         super.stop();
     }
 
+    @Extension
+    @Symbol("bitbucketpr")
     public static final class BitbucketBuildTriggerDescriptor extends TriggerDescriptor {
         public BitbucketBuildTriggerDescriptor() {
             load();

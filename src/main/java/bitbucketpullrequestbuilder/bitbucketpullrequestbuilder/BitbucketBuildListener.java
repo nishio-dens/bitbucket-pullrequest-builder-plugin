@@ -21,7 +21,7 @@ public class BitbucketBuildListener extends RunListener<Run<?, ?>> {
 
     @Override
     public void onStarted(Run r, TaskListener listener) {
-        logger.info("BitbucketBuildListener onStarted called.");
+        logger.fine("BitbucketBuildListener onStarted called.");
         BitbucketBuilds builds = builds(r);
         if (builds != null) {
             builds.onStarted((BitbucketCause) r.getCause(BitbucketCause.class), r);
@@ -30,7 +30,7 @@ public class BitbucketBuildListener extends RunListener<Run<?, ?>> {
 
     @Override
     public void onCompleted(Run r, @Nonnull TaskListener listener) {
-        logger.info("BitbucketBuildListener onCompleted called.");
+        logger.fine("BitbucketBuildListener onCompleted called.");
         BitbucketBuilds builds = builds(r);
         if (builds != null) {
             builds.onCompleted((BitbucketCause) r.getCause(BitbucketCause.class), r.getResult(), r.getUrl());

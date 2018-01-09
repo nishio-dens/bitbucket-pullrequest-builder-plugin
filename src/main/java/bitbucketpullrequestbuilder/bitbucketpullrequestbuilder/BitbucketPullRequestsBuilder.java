@@ -31,6 +31,7 @@ public class BitbucketPullRequestsBuilder {
         // TODO?
     }
 
+
     public void run(Job<?,?> project) {
         logger.info("Build Start.");
         this.repository.init(project);

@@ -63,14 +63,14 @@ public class ApiClient {
             ProxyConfiguration proxy = getInstance().proxy;
             if (proxy == null) return client;
 
-            logger.log(Level.INFO, "Jenkins proxy: {0}:{1}", new Object[]{ proxy.name, proxy.port });
+            logger.log(Level.FINE, "Jenkins proxy: {0}:{1}", new Object[]{ proxy.name, proxy.port });
             client.getHostConfiguration().setProxy(proxy.name, proxy.port);
             String username = proxy.getUserName();
             String password = proxy.getPassword();
 
             // Consider it to be passed if username specified. Sufficient?
             if (username != null && !"".equals(username.trim())) {
-                logger.log(Level.INFO, "Using proxy authentication (user={0})", username);
+                logger.log(Level.FINE, "Using proxy authentication (user={0})", username);
                 client.getState().setProxyCredentials(AuthScope.ANY,
                     new UsernamePasswordCredentials(username, password));
             }
@@ -157,7 +157,7 @@ public class ApiClient {
                 new NameValuePair("state", state.toString()),
                 new NameValuePair("url", buildUrl),
         };
-        logger.log(Level.INFO, "POST state {0} to {1} with key {2} with response {3}", new Object[]{
+        logger.log(Level.FINE, "POST state {0} to {1} with key {2} with response {3}", new Object[]{
           state, url, computedKey, post(url, data)}
         );
     }

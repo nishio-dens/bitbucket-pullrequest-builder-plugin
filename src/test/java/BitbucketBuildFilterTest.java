@@ -4,6 +4,7 @@ import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketBuildFil
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketCause;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketPullRequestsBuilder;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketRepository;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.AbstractPullrequest;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
 
 import java.util.Calendar;
@@ -200,7 +201,7 @@ public class BitbucketBuildFilterTest {
     EasyMock.expect(builder.getTrigger()).andReturn(null).anyTimes();
     EasyMock.replay(builder);
     
-    List<CloudPullrequest.Comment> comments = new LinkedList<CloudPullrequest.Comment>();
+    List<AbstractPullrequest.Comment> comments = new LinkedList<>();
     for(String commentContent : new String[] { 
       "check",
       "",      
@@ -231,7 +232,7 @@ public class BitbucketBuildFilterTest {
     BitbucketRepository repo = new BitbucketRepository("", builder);
     repo.init(EasyMock.createNiceMock(ApiClient.class));    
     
-    List<CloudPullrequest.Comment> filteredComments = repo.filterPullRequestComments(comments);
+    List<AbstractPullrequest.Comment> filteredComments = repo.filterPullRequestComments(comments);
         
     assertTrue(filteredComments.size() == 4);
     assertEquals("Jenkins: test this please", filteredComments.get(filteredComments.size() - 1).getContent());

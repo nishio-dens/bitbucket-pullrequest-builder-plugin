@@ -39,6 +39,7 @@ import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
 public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
     private static final Logger logger = Logger.getLogger(BitbucketBuildTrigger.class.getName());
     private final String projectPath;
+    private final String bitbucketServer;
     private final String cron;
     private final String credentialsId;
     private final String username;
@@ -62,6 +63,7 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
     @DataBoundConstructor
     public BitbucketBuildTrigger(
             String projectPath,
+            String bitbucketServer,
             String cron,
             String credentialsId,
             String username,
@@ -80,6 +82,7 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
             ) throws ANTLRException {
         super(cron);
         this.projectPath = projectPath;
+        this.bitbucketServer = bitbucketServer;
         this.cron = cron;
         this.credentialsId = credentialsId;
         this.username = username;
@@ -99,6 +102,10 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
 
     public String getProjectPath() {
         return this.projectPath;
+    }
+
+    public String getBitbucketServer() {
+        return bitbucketServer;
     }
 
     public String getCron() {
@@ -297,6 +304,10 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
     @Override
     public void stop() {
         super.stop();
+    }
+
+    public boolean isCloud() {
+        return StringUtils.isEmpty(bitbucketServer);
     }
 
     @Extension

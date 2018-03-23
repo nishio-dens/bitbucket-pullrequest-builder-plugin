@@ -7,14 +7,16 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.AbstractPullrequest;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BuildState;
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudApiClient;
 
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.server.ServerApiClient;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
@@ -75,25 +77,45 @@ public class BitbucketRepository {
             if (credentials != null) {
                 username = credentials.getUsername();
                 password = credentials.getPassword().getPlainText();
-            }            
-            this.client = new ApiClient(
-                username,
-                password,
-                trigger.getRepositoryOwner(),
-                trigger.getRepositoryName(),
-                trigger.getCiKey(),
-                trigger.getCiName(),
-                httpFactory
-            );
-            
+            }
+
+            if (this.trigger.isCloud()) {
+                this.client = createCloudClient(httpFactory, username, password);
+            } else {
+                this.client = createServerClient(httpFactory, username, password);
+            }
         } else this.client = client;
     }
 
-    public Collection<Pullrequest> getTargetPullRequests() {
+    private <T extends ApiClient.HttpClientFactory> CloudApiClient createCloudClient(T httpFactory, String username, String password) {
+        return new CloudApiClient(
+            username,
+            password,
+            trigger.getRepositoryOwner(),
+            trigger.getRepositoryName(),
+            trigger.getCiKey(),
+            trigger.getCiName(),
+            httpFactory
+        );
+    }
+
+    private <T extends ApiClient.HttpClientFactory> ServerApiClient createServerClient(T httpFactory, String username, String password) {
+        return new ServerApiClient(
+            trigger.getBitbucketServer(),
+            username,
+            password,
+            trigger.getRepositoryOwner(),
+            trigger.getRepositoryName(),
+            trigger.getCiKey(),
+            trigger.getCiName(),
+            httpFactory);
+    }
+
+    public <T extends AbstractPullrequest> List<T> getTargetPullRequests() {
         logger.fine("Fetch PullRequests.");
-        List<Pullrequest> pullRequests = client.getPullRequests();
-        List<Pullrequest> targetPullRequests = new ArrayList<Pullrequest>();
-        for(Pullrequest pullRequest : pullRequests) {
+        List<T> pullRequests = client.getPullRequests();
+        List<T> targetPullRequests = new ArrayList<>();
+        for(T pullRequest : pullRequests) {
             if (isBuildTarget(pullRequest)) {
                 targetPullRequests.add(pullRequest);
             }
@@ -105,8 +127,8 @@ public class BitbucketRepository {
       return this.client;
     }
 
-    public void addFutureBuildTasks(Collection<Pullrequest> pullRequests) {
-        for(Pullrequest pullRequest : pullRequests) {
+    public void addFutureBuildTasks(Collection<AbstractPullrequest> pullRequests) {
+        for(AbstractPullrequest pullRequest : pullRequests) {
             if ( this.trigger.getApproveIfSuccess() ) {
                 deletePullRequestApproval(pullRequest.getId());
             }
@@ -207,12 +229,12 @@ public class BitbucketRepository {
       return content.toLowerCase().contains(BUILD_REQUEST_DONE_MARKER.toLowerCase());
     }
     
-    public List<Pullrequest.Comment> filterPullRequestComments(List<Pullrequest.Comment> comments) {
+    public List<AbstractPullrequest.Comment> filterPullRequestComments(List<AbstractPullrequest.Comment> comments) {
       logger.fine("Filter PullRequest Comments.");
       Collections.sort(comments);
       Collections.reverse(comments);      
-      List<Pullrequest.Comment> filteredComments = new LinkedList<Pullrequest.Comment>();      
-      for(Pullrequest.Comment comment : comments) {
+      List<AbstractPullrequest.Comment> filteredComments = new LinkedList<AbstractPullrequest.Comment>();
+      for(AbstractPullrequest.Comment comment : comments) {
         String content = comment.getContent();
         if (content == null || content.isEmpty()) continue;        
         boolean isTTP = this.isTTPComment(content);        
@@ -223,19 +245,19 @@ public class BitbucketRepository {
       return filteredComments;
     }
     
-    private boolean isBuildTarget(Pullrequest pullRequest) {
+    private boolean isBuildTarget(AbstractPullrequest pullRequest) {
         if (pullRequest.getState() != null && pullRequest.getState().equals("OPEN")) {
             if (isSkipBuild(pullRequest.getTitle()) || !isFilteredBuild(pullRequest)) {
                 return false;
             }
 
-            Pullrequest.Revision source = pullRequest.getSource();
+            AbstractPullrequest.Revision source = pullRequest.getSource();
             String sourceCommit = source.getCommit().getHash();
-            Pullrequest.Revision destination = pullRequest.getDestination();
+            AbstractPullrequest.Revision destination = pullRequest.getDestination();
             String owner = destination.getRepository().getOwnerName();
             String repositoryName = destination.getRepository().getRepositoryName();
 
-            Pullrequest.Repository sourceRepository = source.getRepository();
+            AbstractPullrequest.Repository sourceRepository = source.getRepository();
             String buildKeyPart = this.builder.getProjectId();
 
             final boolean commitAlreadyBeenProcessed = this.client.hasBuildStatus(
@@ -247,13 +269,13 @@ public class BitbucketRepository {
             );
             
             final String id = pullRequest.getId();
-            List<Pullrequest.Comment> comments = client.getPullRequestComments(owner, repositoryName, id);
+            List<AbstractPullrequest.Comment> comments = client.getPullRequestComments(owner, repositoryName, id);
 
             boolean rebuildCommentAvailable = false;
             if (comments != null) {
-                Collection<Pullrequest.Comment> filteredComments = this.filterPullRequestComments(comments);
+                Collection<AbstractPullrequest.Comment> filteredComments = this.filterPullRequestComments(comments);
                 boolean hasMyBuildTag = false;
-                for (Pullrequest.Comment comment : filteredComments) {
+                for (AbstractPullrequest.Comment comment : filteredComments) {
                     String content = comment.getContent();
                     if (this.isTTPComment(content)) {  
                         rebuildCommentAvailable = true;
@@ -290,7 +312,7 @@ public class BitbucketRepository {
         return false;
     }
 
-    private boolean isFilteredBuild(Pullrequest pullRequest) {
+    private boolean isFilteredBuild(AbstractPullrequest pullRequest) {
 
         final String pullRequestId = pullRequest.getId();
         final String pullRequestTitle = pullRequest.getTitle();

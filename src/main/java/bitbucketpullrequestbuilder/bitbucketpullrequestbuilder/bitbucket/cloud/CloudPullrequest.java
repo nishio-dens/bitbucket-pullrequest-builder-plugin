@@ -1,11 +1,10 @@
-package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket;
+package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud;
 
-import java.util.List;
-import java.util.Comparator;
-import java.util.Map;
-
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.AbstractPullrequest;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
+
+import java.util.Map;
 
 /**
  * POJOs representing the pull-requests extracted from the
@@ -15,7 +14,7 @@ import org.codehaus.jackson.annotate.JsonProperty;
  */
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Pullrequest {
+public class CloudPullrequest extends AbstractPullrequest {
 
     private String     description;
     private Boolean    closeSourceBranch;
@@ -32,50 +31,7 @@ public class Pullrequest {
     private Author     author;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Response<T> {
-        private int pageLength;
-        private List<T> values;
-        private int page;
-        private int size;
-        private String next;
-
-        @JsonProperty("pagelen")
-        public int getPageLength() {
-            return pageLength;
-        }
-        @JsonProperty("pagelen")
-        public void setPageLength(int pageLength) {
-            this.pageLength = pageLength;
-        }
-        public List<T> getValues() {
-            return values;
-        }
-        public void setValues(List<T> values) {
-            this.values = values;
-        }
-        public int getPage() {
-            return page;
-        }
-        public void setPage(int page) {
-            this.page = page;
-        }
-        public int getSize() {
-            return size;
-        }
-        public void setSize(int size) {
-            this.size = size;
-        }
-        public String getNext() {
-            return next;
-        }
-        public void setNext(String next) {
-            this.next = next;
-        }
-    }
-
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Revision {
+    public static class Revision implements AbstractPullrequest.Revision {
         private Repository repository;
         private Branch branch;
         private Commit commit;
@@ -101,7 +57,7 @@ public class Pullrequest {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Repository {
+    public static class Repository implements AbstractPullrequest.Repository {
         private String fullName;
         private String name;
         private String ownerName;
@@ -135,7 +91,7 @@ public class Pullrequest {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Branch {
+    public static class Branch implements AbstractPullrequest.Branch {
         private String name;
 
         public String getName() {
@@ -148,7 +104,7 @@ public class Pullrequest {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Commit {
+    public static class Commit implements AbstractPullrequest.Commit {
         private String hash;
 
         public String getHash() {
@@ -162,7 +118,7 @@ public class Pullrequest {
 
     // Was: Approval
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Participant {
+    public static class Participant implements AbstractPullrequest.Participant {
         private String role;
         private Boolean approved;
 
@@ -180,15 +136,41 @@ public class Pullrequest {
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Author implements AbstractPullrequest.Author {
+        private String username;
+        private String display_name;
+
+        public String getUsername() {
+            return username;
+        }
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        @JsonProperty("display_name")
+        public String getDisplayName() {
+            return display_name;
+        }
+
+        @JsonProperty("display_name")
+        public void setDisplayName(String display_name) {
+            this.display_name = display_name;
+        }
+        public String getCombinedUsername() {
+            return String.format(AUTHOR_COMBINED_NAME, this.getDisplayName(), this.getUsername());
+        }
+    }
+
     // https://confluence.atlassian.com/bitbucket/pullrequests-resource-1-0-296095210.html#pullrequestsResource1.0-POSTanewcomment
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Comment implements Comparable<Comment> {
+    public static class Comment implements AbstractPullrequest.Comment {
         private Integer id;
         private String  filename;
         private String  content;
 
         @Override
-        public int compareTo(Comment target) {
+        public int compareTo(AbstractPullrequest.Comment target) {
             if (target == null){
                 return -1;
             } else if (this.getId() > target.getId()) {
@@ -244,33 +226,6 @@ public class Pullrequest {
             return;
         }
 
-    }
-    
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Author {
-      private String username;
-      private String display_name;
-      public static final String COMBINED_NAME = "%s <@%s>";
-      
-      public String getUsername() {
-          return username;
-      }
-      public void setUsername(String username) {
-          this.username = username;
-      }
-      
-      @JsonProperty("display_name")
-      public String getDisplayName() {
-          return display_name;
-      }
-      
-      @JsonProperty("display_name")
-      public void setDisplayName(String display_name) {
-          this.display_name = display_name;
-      }
-      public String getCombinedUsername() {
-        return String.format(COMBINED_NAME, this.getDisplayName(), this.getUsername());
-      }
     }
 
     //-------------------- only getters and setters follow -----------------
@@ -380,13 +335,13 @@ public class Pullrequest {
     public void setId(String id) {
         this.id = id;
     }
-    
+
     public Author getAuthor() {
-      return this.author;
+        return this.author;
     }
-    
-    public void setAutohor(Author author) {
-      this.author = author;
+
+    public void setAuthor(Author author) {
+        this.author = author;
     }
 
 }

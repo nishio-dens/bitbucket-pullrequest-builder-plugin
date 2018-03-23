@@ -1,18 +1,17 @@
 
 import antlr.ANTLRException;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketBuildFilter;
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketBuildTrigger;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketCause;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketPullRequestsBuilder;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketRepository;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
 
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudPullrequest;
 import jenkins.plugins.git.AbstractGitSCMSource;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.WithoutJenkins;
@@ -201,7 +200,7 @@ public class BitbucketBuildFilterTest {
     EasyMock.expect(builder.getTrigger()).andReturn(null).anyTimes();
     EasyMock.replay(builder);
     
-    List<Pullrequest.Comment> comments = new LinkedList<Pullrequest.Comment>();
+    List<CloudPullrequest.Comment> comments = new LinkedList<CloudPullrequest.Comment>();
     for(String commentContent : new String[] { 
       "check",
       "",      
@@ -216,7 +215,7 @@ public class BitbucketBuildFilterTest {
       "TTP build flag [bid: #jenkins-902f259e962ff16100843123480a0970 #jenkins-foo]",
       "TTP build flag [bid: #jenkins-902f259e962ff16100843123480a0970 #jenkins-foo #jenkins-bar]",
     }) {
-      Pullrequest.Comment comment = EasyMock.createNiceMock(Pullrequest.Comment.class);
+      CloudPullrequest.Comment comment = EasyMock.createNiceMock(CloudPullrequest.Comment.class);
       EasyMock.expect(comment.getContent()).andReturn(commentContent).anyTimes();
       EasyMock.expect(comment.getId()).andReturn(new java.sql.Timestamp(Calendar.getInstance().getTime().getTime()).getNanos()).anyTimes();
       EasyMock.replay(comment);
@@ -232,7 +231,7 @@ public class BitbucketBuildFilterTest {
     BitbucketRepository repo = new BitbucketRepository("", builder);
     repo.init(EasyMock.createNiceMock(ApiClient.class));    
     
-    List<Pullrequest.Comment> filteredComments = repo.filterPullRequestComments(comments);
+    List<CloudPullrequest.Comment> filteredComments = repo.filterPullRequestComments(comments);
         
     assertTrue(filteredComments.size() == 4);
     assertEquals("Jenkins: test this please", filteredComments.get(filteredComments.size() - 1).getContent());
@@ -251,14 +250,14 @@ public class BitbucketBuildFilterTest {
     EasyMock.expect(repo.getMyBuildTag(EasyMock.anyString())).andReturn("#jenkins-902f259e962ff16100843123480a0970").anyTimes();   
     EasyMock.replay(repo);
     
-    List<Pullrequest.Comment> comments = new LinkedList<Pullrequest.Comment>();
+    List<CloudPullrequest.Comment> comments = new LinkedList<CloudPullrequest.Comment>();
     for(String commentContent : new String[] { 
       "TTP build flag [bid: #jenkins-902f259e962ff16100843123480a0970]",
       "TTP build flag [bid: #jenkins-902f259e962ff16100843123480a0970 #jenkins-foo]",
       "TTP build flag [bid: #jenkins-902f259e962ff16100843123480a0970 #jenkins-foo #jenkins-bar]",
       "TTP build flag ```[bid: #jenkins-902f259e962ff16100843123480a0970 #jenkins-foo #jenkins-bar]```",
     }) {
-      Pullrequest.Comment comment = EasyMock.createNiceMock(Pullrequest.Comment.class);
+      CloudPullrequest.Comment comment = EasyMock.createNiceMock(CloudPullrequest.Comment.class);
       EasyMock.expect(comment.getContent()).andReturn(commentContent).anyTimes();
       EasyMock.expect(comment.getId()).andReturn(new java.sql.Timestamp(Calendar.getInstance().getTime().getTime()).getNanos()).anyTimes();
       EasyMock.replay(comment);
@@ -266,7 +265,7 @@ public class BitbucketBuildFilterTest {
     }
     
     String myBuildKey = "902f259e962ff16100843123480a0970";
-    for(Pullrequest.Comment comment : comments)
+    for(CloudPullrequest.Comment comment : comments)
       assertTrue(repo.hasMyBuildTagInTTPComment(comment.getContent(), myBuildKey));
   }
   
@@ -283,7 +282,7 @@ public class BitbucketBuildFilterTest {
     EasyMock.expect(repo.getMyBuildTag(EasyMock.anyString())).andReturn("#jenkins-902f259e962ff16100843123480a0970").anyTimes();   
     EasyMock.replay(repo);
     
-    List<Pullrequest.Comment> comments = new LinkedList<Pullrequest.Comment>();
+    List<CloudPullrequest.Comment> comments = new LinkedList<CloudPullrequest.Comment>();
     for(String commentContent : new String[] { 
       "check",
       "",      
@@ -294,7 +293,7 @@ public class BitbucketBuildFilterTest {
       "TTP build flag [bid: #jenkins-foo #jenkins-bar]",
       "TTP build flag ```[bid: #jenkins-foo #jenkins-bar]```",
     }) {
-      Pullrequest.Comment comment = EasyMock.createNiceMock(Pullrequest.Comment.class);
+      CloudPullrequest.Comment comment = EasyMock.createNiceMock(CloudPullrequest.Comment.class);
       EasyMock.expect(comment.getContent()).andReturn(commentContent).anyTimes();
       EasyMock.expect(comment.getId()).andReturn(new java.sql.Timestamp(Calendar.getInstance().getTime().getTime()).getNanos()).anyTimes();
       EasyMock.replay(comment);
@@ -302,7 +301,7 @@ public class BitbucketBuildFilterTest {
     }
     
     String myBuildKey = "902f259e962ff16100843123480a0970";
-    for(Pullrequest.Comment comment : comments)
+    for(CloudPullrequest.Comment comment : comments)
       assertFalse(repo.hasMyBuildTagInTTPComment(comment.getContent(), myBuildKey));
   }
 }

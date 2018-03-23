@@ -1,19 +1,19 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket;
 
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.server.ServerPullrequest;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.DeleteMethod;
+import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.httpclient.params.HttpClientParams;
+import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.type.TypeFactory;
 import org.codehaus.jackson.type.JavaType;
 import org.codehaus.jackson.type.TypeReference;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,19 +31,20 @@ import org.apache.commons.httpclient.util.EncodingUtil;
 /**
  * Created by nishio
  */
-public class ApiClient {
+public abstract class ApiClient {
     private static final Logger logger = Logger.getLogger(ApiClient.class.getName());
-    private static final String V1_API_BASE_URL = "https://bitbucket.org/api/1.0/repositories/";
-    private static final String V2_API_BASE_URL = "https://bitbucket.org/api/2.0/repositories/";
-    private static final String COMPUTED_KEY_FORMAT = "%s-%s";    
-    private String owner;
-    private String repositoryName;
-    private Credentials credentials;
-    private String key;
-    private String name;
-    private HttpClientFactory factory;
-    
+
+    private static final String COMPUTED_KEY_FORMAT = "%s-%s";
     public static final byte MAX_KEY_SIZE_BB_API = 40;
+
+    protected String owner;
+    protected String repositoryName;
+    protected Credentials credentials;
+    protected String key;
+    protected String name;
+    protected HttpClientFactory factory;
+
+    private static MessageDigest SHA1 = null;
 
     public static class HttpClientFactory {    
         public static final HttpClientFactory INSTANCE = new HttpClientFactory();
@@ -100,27 +101,13 @@ public class ApiClient {
         this.name = name;        
         this.factory = httpFactory != null ? httpFactory : HttpClientFactory.INSTANCE;
     }
-
-    public List<Pullrequest> getPullRequests() {
-        return getAllValues(v2("/pullrequests/"), 50, Pullrequest.class);
-    }
-
-    public List<Pullrequest.Comment> getPullRequestComments(String commentOwnerName, String commentRepositoryName, String pullRequestId) {
-        return getAllValues(v2("/pullrequests/" + pullRequestId + "/comments"), 100, Pullrequest.Comment.class);
-    }
-    
-    public String getName() {
-      return this.name;
-    }
-    
-    private static MessageDigest SHA1 = null;
     
     /**
      * Retrun 
      * @param keyExPart
      * @return key parameter for call BitBucket API 
      */
-    private String computeAPIKey(String keyExPart) {
+    protected String computeAPIKey(String keyExPart) {
       String computedKey = String.format(COMPUTED_KEY_FORMAT, this.key, keyExPart);
       
       if (computedKey.length() > MAX_KEY_SIZE_BB_API) {
@@ -135,117 +122,39 @@ public class ApiClient {
       }      
       return (computedKey.length() <= MAX_KEY_SIZE_BB_API) ?  computedKey : computedKey.substring(0, MAX_KEY_SIZE_BB_API);
     }
-    
-    public String buildStatusKey(String bsKey) {
-      return this.computeAPIKey(bsKey);
-    }
-
-    public boolean hasBuildStatus(String owner, String repositoryName, String revision, String keyEx) {
-        String url = v2(owner, repositoryName, "/commit/" + revision + "/statuses/build/" + this.computeAPIKey(keyEx));
-        String reqBody = get(url);
-        return reqBody != null && reqBody.contains("\"state\"");
-    }
-
-    public void setBuildStatus(String owner, String repositoryName, String revision, BuildState state, String buildUrl, String comment, String keyEx) {
-        String url = v2(owner, repositoryName, "/commit/" + revision + "/statuses/build");
-        String computedKey = this.computeAPIKey(keyEx);
-        NameValuePair[] data = new NameValuePair[]{
-                new NameValuePair("description", comment),
-                new NameValuePair("key", computedKey),
-                new NameValuePair("name", this.name),
-                new NameValuePair("state", state.toString()),
-                new NameValuePair("url", buildUrl),
-        };
-        logger.log(Level.FINE, "POST state {0} to {1} with key {2} with response {3}", new Object[]{
-          state, url, computedKey, post(url, data)}
-        );
-    }
-
-    public void deletePullRequestApproval(String pullRequestId) {
-        delete(v2("/pullrequests/" + pullRequestId + "/approve"));
-    }
-    
-    public void deletePullRequestComment(String pullRequestId, String commentId) {
-        delete(v1("/pullrequests/" + pullRequestId + "/comments/" + commentId));
-    }
-    
-    public void updatePullRequestComment(String pullRequestId, String content, String commentId) {
-        NameValuePair[] data = new NameValuePair[] {
-                new NameValuePair("content", content),
-        };
-        put(v1("/pullrequests/" + pullRequestId + "/comments/" + commentId), data);
-    }
-
-    public Pullrequest.Participant postPullRequestApproval(String pullRequestId) {
-        try {
-            return parse(post(v2("/pullrequests/" + pullRequestId + "/approve"),
-                new NameValuePair[]{}), Pullrequest.Participant.class);
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Invalid pull request approval response.", e);
-        }
-        return null;
-    }
-    
-    public Pullrequest.Comment postPullRequestComment(String pullRequestId, String content) {
-        NameValuePair[] data = new NameValuePair[] {
-                new NameValuePair("content", content),
-        };
-        try {
-            return parse(post(v1("/pullrequests/" + pullRequestId + "/comments"), data), new TypeReference<Pullrequest.Comment>() {});
-        } catch(Exception e) {
-            logger.log(Level.WARNING, "Invalid pull request comment response.", e);
-        }
-        return null;
-    }
-
-    private <T> List<T> getAllValues(String rootUrl, int pageLen, Class<T> cls) {
-        List<T> values = new ArrayList<T>();
-        try {
-            String url = rootUrl + "?pagelen=" + pageLen;
-            do {
-                final JavaType type = TypeFactory.defaultInstance().constructParametricType(Pullrequest.Response.class, cls);
-                Pullrequest.Response<T> response = parse(get(url), type);
-                values.addAll(response.getValues());
-                url = response.getNext();
-            } while (url != null);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "invalid response.", e);
-        }
-        return values;
-    }
 
     private HttpClient getHttpClient() {
         return this.factory.getInstanceHttpClient();
     }
 
-    private String v1(String url) {
-        return V1_API_BASE_URL + this.owner + "/" + this.repositoryName + url;
-    }
-
-    private String v2(String path) {
-        return v2(this.owner, this.repositoryName, path);
-    }
-
-    private String v2(String owner, String repositoryName, String path) {
-        return V2_API_BASE_URL + owner + "/" + repositoryName + path;
-    }
-
-    private String get(String path) {
+    protected String get(String path) {
         return send(new GetMethod(path));
     }
 
-    private String post(String path, NameValuePair[] data) {
+    protected String post(String path, NameValuePair[] data) {
         PostMethod req = new PostMethod(path);
         req.setRequestBody(data);
         req.getParams().setContentCharset("utf-8");
         return send(req);
     }
 
-    private void delete(String path) {
+    protected String post(String path, Object data) {
+        try {
+            final StringRequestEntity entity = new StringRequestEntity(new ObjectMapper().writeValueAsString(data), "application/json", "utf-8");
+            PostMethod req = new PostMethod(path);
+            req.setRequestEntity(entity);
+            return send(req);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Not able to parse data to json", e);
+        }
+        return null;
+    }
+
+    protected void delete(String path) {
          send(new DeleteMethod(path));
     }
     
-    private void put(String path, NameValuePair[] data) {
+    protected void put(String path, NameValuePair[] data) {
         PutMethod req = new PutMethod(path);
         req.setRequestBody(EncodingUtil.formUrlEncode(data, "utf-8"));
         req.getParams().setContentCharset("utf-8");
@@ -258,10 +167,13 @@ public class ApiClient {
         client.getParams().setAuthenticationPreemptive(true);
         try {
             int statusCode = client.executeMethod(req);
-            if (statusCode != HttpStatus.SC_OK) {
+            if (statusCode == HttpStatus.SC_NO_CONTENT) {
+                return null;
+            } else if (statusCode != HttpStatus.SC_OK) {
                 logger.log(Level.WARNING, "Response status: " + req.getStatusLine()+" URI: "+req.getURI());
-            }else{
-                return req.getResponseBodyAsString();
+                logger.log(Level.WARNING, IOUtils.toString(req.getResponseBodyAsStream()));
+            } else {
+                return IOUtils.toString(req.getResponseBodyAsStream());
             }
         } catch (HttpException e) {
             logger.log(Level.WARNING, "Failed to send request.", e);
@@ -273,13 +185,54 @@ public class ApiClient {
         return null;
     }
 
-    private <R> R parse(String response, Class<R> cls) throws IOException {
+    protected <R> R parse(String response, Class<R> cls) throws IOException {
         return new ObjectMapper().readValue(response, cls);
     }
-    private <R> R parse(String response, JavaType type) throws IOException {
+    protected <R> R parse(String response, JavaType type) throws IOException {
         return new ObjectMapper().readValue(response, type);
     }
-    private <R> R parse(String response, TypeReference<R> ref) throws IOException {
+    protected <R> R parse(String response, TypeReference<R> ref) throws IOException {
         return new ObjectMapper().readValue(response, ref);
+    }
+
+    protected void setBuildStatus(BuildState state, String buildUrl, String comment, String keyEx, String url) {
+        String computedKey = computeAPIKey(keyEx);
+//        NameValuePair[] data = new NameValuePair[]{
+//            //new NameValuePair("description", comment),
+//            new NameValuePair("key", computedKey),
+//            new NameValuePair("name", this.name),
+//            new NameValuePair("state", state.toString()),
+//            new NameValuePair("url", buildUrl),
+//        };
+        ServerPullrequest.CommitBuildState commit = new ServerPullrequest.CommitBuildState();
+        commit.setKey(computedKey);
+        commit.setState(state);
+        commit.setUrl(buildUrl);
+
+        logger.log(Level.FINE, "POST state {0} to {1} with key {2} with response {3}", new Object[]{
+            state, url, computedKey, post(url, commit)}
+        );
+    }
+
+    public abstract <T extends AbstractPullrequest> List<T> getPullRequests();
+
+    public abstract List<AbstractPullrequest.Comment> getPullRequestComments(String commentOwnerName, String commentRepositoryName, String pullRequestId);
+
+    public String buildStatusKey(String bsKey) {
+        return this.computeAPIKey(bsKey);
+    }
+
+    public abstract boolean hasBuildStatus(String owner, String repositoryName, String revision, String keyEx);
+
+    public abstract void setBuildStatus(String owner, String repositoryName, String revision, BuildState state, String buildUrl, String comment, String keyEx);
+
+    public abstract void deletePullRequestApproval(String pullRequestId);
+
+    public abstract AbstractPullrequest.Participant postPullRequestApproval(String pullRequestId);
+
+    public abstract AbstractPullrequest.Comment postPullRequestComment(String pullRequestId, String content);
+
+    public String getName() {
+        return this.name;
     }
 }

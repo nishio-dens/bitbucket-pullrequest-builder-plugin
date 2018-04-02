@@ -301,4 +301,52 @@ public class ServerPullrequest extends AbstractPullrequest {
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Approver {
+        private boolean approved;
+        private String status;
+        private User user;
+
+        public boolean isApproved() {
+            return approved;
+        }
+
+        public void setApproved(boolean approved) {
+            this.approved = approved;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
+        public User getUser() {
+            return user;
+        }
+
+        public void setUser(User user) {
+            this.user = user;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class User {
+        private String name;
+
+        public User(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+    }
+
 }

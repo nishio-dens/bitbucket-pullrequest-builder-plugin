@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.AbstractPullrequest;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BuildState;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudBitbucketCause;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudApiClient;
 
 import java.util.LinkedList;
@@ -17,6 +18,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.server.ServerApiClient;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.server.ServerBitbucketCause;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
@@ -132,22 +134,47 @@ public class BitbucketRepository {
             if ( this.trigger.getApproveIfSuccess() ) {
                 deletePullRequestApproval(pullRequest.getId());
             }
-            BitbucketCause cause = new BitbucketCause(
-                    pullRequest.getSource().getBranch().getName(),
-                    pullRequest.getDestination().getBranch().getName(),
-                    pullRequest.getSource().getRepository().getOwnerName(),
-                    pullRequest.getSource().getRepository().getRepositoryName(),
-                    pullRequest.getId(),
-                    pullRequest.getDestination().getRepository().getOwnerName(),
-                    pullRequest.getDestination().getRepository().getRepositoryName(),
-                    pullRequest.getTitle(),
-                    pullRequest.getSource().getCommit().getHash(),
-                    pullRequest.getDestination().getCommit().getHash(),
-                    pullRequest.getAuthor().getCombinedUsername()
-            );
+
+            final BitbucketCause cause = createCause(pullRequest);
+
             setBuildStatus(cause, BuildState.INPROGRESS, getInstance().getRootUrl());
             this.builder.getTrigger().startJob(cause);
         }
+    }
+
+    private BitbucketCause createCause(AbstractPullrequest pullRequest) {
+        final BitbucketCause cause;
+        if (this.trigger.isCloud()) {
+            cause = new CloudBitbucketCause(
+                pullRequest.getSource().getBranch().getName(),
+                pullRequest.getDestination().getBranch().getName(),
+                pullRequest.getSource().getRepository().getOwnerName(),
+                pullRequest.getSource().getRepository().getRepositoryName(),
+                pullRequest.getId(),
+                pullRequest.getDestination().getRepository().getOwnerName(),
+                pullRequest.getDestination().getRepository().getRepositoryName(),
+                pullRequest.getTitle(),
+                pullRequest.getSource().getCommit().getHash(),
+                pullRequest.getDestination().getCommit().getHash(),
+                pullRequest.getAuthor().getCombinedUsername()
+            );
+        } else {
+            cause = new ServerBitbucketCause(
+                trigger.getBitbucketServer(),
+                pullRequest.getSource().getBranch().getName(),
+                pullRequest.getDestination().getBranch().getName(),
+                pullRequest.getSource().getRepository().getOwnerName(),
+                pullRequest.getSource().getRepository().getRepositoryName(),
+                pullRequest.getId(),
+                pullRequest.getDestination().getRepository().getOwnerName(),
+                pullRequest.getDestination().getRepository().getRepositoryName(),
+                pullRequest.getTitle(),
+                pullRequest.getSource().getCommit().getHash(),
+                pullRequest.getDestination().getCommit().getHash(),
+                pullRequest.getAuthor().getCombinedUsername()
+            );
+        }
+        return cause;
     }
 
     private Jenkins getInstance() {
@@ -330,19 +357,7 @@ public class BitbucketRepository {
             destinationCommitHash = pullRequest.getDestination().getCommit().getHash();
         }
 
-        BitbucketCause cause = new BitbucketCause(
-          pullRequest.getSource().getBranch().getName(),
-          pullRequest.getDestination().getBranch().getName(),
-          pullRequest.getSource().getRepository().getOwnerName(),
-          pullRequest.getSource().getRepository().getRepositoryName(),
-          pullRequestId,
-          pullRequest.getDestination().getRepository().getOwnerName(),
-          destinationRepoName,
-          pullRequestTitle,
-          pullRequest.getSource().getCommit().getHash(),
-          destinationCommitHash,
-          pullRequest.getAuthor().getCombinedUsername()
-        );
+        BitbucketCause cause = createCause(pullRequest);
         
         //@FIXME: Way to iterate over all available SCMSources
         List<SCMSource> sources = new LinkedList<SCMSource>();

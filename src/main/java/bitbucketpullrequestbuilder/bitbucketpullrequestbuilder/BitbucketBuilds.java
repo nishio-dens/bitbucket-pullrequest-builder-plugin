@@ -1,6 +1,7 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BuildState;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudBitbucketCause;
 import hudson.model.*;
 import jenkins.model.JenkinsLocationConfiguration;
 

@@ -2,10 +2,7 @@ package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
 import hudson.model.Cause;
 
-/**
- * Created by nishio
- */
-public class BitbucketCause extends Cause {
+public abstract class BitbucketCause extends Cause {
     private final String sourceBranch;
     private final String targetBranch;
     private final String repositoryOwner;
@@ -17,19 +14,8 @@ public class BitbucketCause extends Cause {
     private final String sourceCommitHash;
     private final String destinationCommitHash;
     private final String pullRequestAuthor;
-    public static final String BITBUCKET_URL = "https://bitbucket.org/";
 
-    public BitbucketCause(String sourceBranch,
-                          String targetBranch,
-                          String repositoryOwner,
-                          String repositoryName,
-                          String pullRequestId,
-                          String destinationRepositoryOwner,
-                          String destinationRepositoryName,
-                          String pullRequestTitle,
-                          String sourceCommitHash,
-                          String destinationCommitHash,
-                          String pullRequestAuthor) {
+    protected BitbucketCause(String sourceBranch, String targetBranch, String repositoryOwner, String repositoryName, String pullRequestId, String destinationRepositoryOwner, String destinationRepositoryName, String pullRequestTitle, String sourceCommitHash, String destinationCommitHash, String pullRequestAuthor) {
         this.sourceBranch = sourceBranch;
         this.targetBranch = targetBranch;
         this.repositoryOwner = repositoryOwner;
@@ -46,6 +32,7 @@ public class BitbucketCause extends Cause {
     public String getSourceBranch() {
         return sourceBranch;
     }
+
     public String getTargetBranch() {
         return targetBranch;
     }
@@ -61,7 +48,6 @@ public class BitbucketCause extends Cause {
     public String getPullRequestId() {
         return pullRequestId;
     }
-
 
     public String getDestinationRepositoryOwner() {
         return destinationRepositoryOwner;
@@ -79,15 +65,7 @@ public class BitbucketCause extends Cause {
 
     public String getDestinationCommitHash() { return destinationCommitHash; }
 
-    @Override
-    public String getShortDescription() {
-        String description = "<a href=\"" + BITBUCKET_URL + this.getDestinationRepositoryOwner() + "/";
-        description += this.getDestinationRepositoryName() + "/pull-request/" + this.getPullRequestId();
-        description += "\">#" + this.getPullRequestId() + " " + this.getPullRequestTitle() + "</a>";
-        return description;
-    }
-    
     public String getPullRequestAuthor() {
-      return this.pullRequestAuthor;
+        return this.pullRequestAuthor;
     }
 }

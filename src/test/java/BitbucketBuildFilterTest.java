@@ -1,7 +1,7 @@
 
 import antlr.ANTLRException;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketBuildFilter;
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketCause;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudBitbucketCause;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketPullRequestsBuilder;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketRepository;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.AbstractPullrequest;
@@ -33,7 +33,7 @@ public class BitbucketBuildFilterTest {
   @Test
   @WithoutJenkins
   public void mockTest() {
-    BitbucketCause cause = EasyMock.createMock(BitbucketCause.class);
+    CloudBitbucketCause cause = EasyMock.createMock(CloudBitbucketCause.class);
     EasyMock.expect(cause.getTargetBranch()).andReturn("mock").anyTimes();    
     EasyMock.replay(cause);
     for(Integer i : new Integer[] {1, 2, 3, 4, 5}) assertEquals("mock", cause.getTargetBranch());
@@ -42,7 +42,7 @@ public class BitbucketBuildFilterTest {
   @Test
   @WithoutJenkins
   public void anyFilter() {
-    BitbucketCause cause = EasyMock.createMock(BitbucketCause.class);
+    CloudBitbucketCause cause = EasyMock.createMock(CloudBitbucketCause.class);
     EasyMock.expect(cause.getTargetBranch()).andReturn("master").anyTimes(); 
     EasyMock.replay(cause);
       
@@ -60,7 +60,7 @@ public class BitbucketBuildFilterTest {
   @Test
   @WithoutJenkins
   public void onlyDestinationFilter() {
-    BitbucketCause cause = EasyMock.createMock(BitbucketCause.class);
+    CloudBitbucketCause cause = EasyMock.createMock(CloudBitbucketCause.class);
     EasyMock.expect(cause.getTargetBranch()).andReturn("master-branch").anyTimes();
     EasyMock.replay(cause);
     
@@ -88,7 +88,7 @@ public class BitbucketBuildFilterTest {
   @Test
   @WithoutJenkins
   public void sourceAndDestFilter() {
-    BitbucketCause cause = EasyMock.createMock(BitbucketCause.class);
+    CloudBitbucketCause cause = EasyMock.createMock(CloudBitbucketCause.class);
     EasyMock.expect(cause.getTargetBranch()).andReturn("master").anyTimes();
     EasyMock.expect(cause.getSourceBranch()).andReturn("feature-for-master").anyTimes();
     EasyMock.replay(cause);
@@ -107,7 +107,7 @@ public class BitbucketBuildFilterTest {
   @Test
   @WithoutJenkins
   public void multipleSrcDestFilter() {
-    BitbucketCause cause = EasyMock.createMock(BitbucketCause.class);
+    CloudBitbucketCause cause = EasyMock.createMock(CloudBitbucketCause.class);
     EasyMock.expect(cause.getTargetBranch()).andReturn("master").anyTimes();
     EasyMock.expect(cause.getSourceBranch()).andReturn("feature-master").anyTimes();
     EasyMock.replay(cause);
@@ -126,7 +126,7 @@ public class BitbucketBuildFilterTest {
   @Test
   @WithoutJenkins
   public void sourceAndDestPartiallyFilter() {
-    BitbucketCause cause = EasyMock.createMock(BitbucketCause.class);
+    CloudBitbucketCause cause = EasyMock.createMock(CloudBitbucketCause.class);
     EasyMock.expect(cause.getTargetBranch()).andReturn("master").anyTimes();
     EasyMock.expect(cause.getSourceBranch()).andReturn("feature-master").anyTimes();
     EasyMock.replay(cause);
@@ -145,7 +145,7 @@ public class BitbucketBuildFilterTest {
   @Test
   @WithoutJenkins
   public void authorFilter() {
-    BitbucketCause cause = EasyMock.createMock(BitbucketCause.class);
+    CloudBitbucketCause cause = EasyMock.createMock(CloudBitbucketCause.class);
     EasyMock.expect(cause.getTargetBranch()).andReturn("master").anyTimes();
     EasyMock.expect(cause.getSourceBranch()).andReturn("feature-master").anyTimes();
     EasyMock.expect(cause.getPullRequestAuthor()).andReturn("test").anyTimes();
@@ -165,7 +165,7 @@ public class BitbucketBuildFilterTest {
   @Test
   @WithoutJenkins
   public void emptyGitSCMFilter() {
-    BitbucketCause cause = EasyMock.createMock(BitbucketCause.class);
+    CloudBitbucketCause cause = EasyMock.createMock(CloudBitbucketCause.class);
     EasyMock.expect(cause.getTargetBranch()).andReturn("master").anyTimes();
     EasyMock.replay(cause);
     

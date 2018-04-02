@@ -74,11 +74,7 @@ public class ServerApiClient extends ApiClient {
 
     @Override
     public CloudPullrequest.Participant postPullRequestApproval(String pullRequestId) {
-        try {
-            return parse(post(restV1(PULL_REQUESTS_URL + pullRequestId + "/approve"), new NameValuePair[]{}), CloudPullrequest.Participant.class);
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Invalid pull request approval response.", e);
-        }
+        post(restV1(PULL_REQUESTS_URL + pullRequestId + "/approve"));
         return null;
     }
 

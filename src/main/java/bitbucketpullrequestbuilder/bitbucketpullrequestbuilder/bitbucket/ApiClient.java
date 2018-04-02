@@ -150,6 +150,12 @@ public abstract class ApiClient {
         return null;
     }
 
+    protected String post(String path) {
+        final PostMethod req = new PostMethod(path);
+        req.setRequestHeader("X-Atlassian-Token", "no-check");
+        return send(req);
+    }
+
     protected void delete(String path) {
          send(new DeleteMethod(path));
     }
@@ -197,13 +203,6 @@ public abstract class ApiClient {
 
     protected void setBuildStatus(BuildState state, String buildUrl, String comment, String keyEx, String url) {
         String computedKey = computeAPIKey(keyEx);
-//        NameValuePair[] data = new NameValuePair[]{
-//            //new NameValuePair("description", comment),
-//            new NameValuePair("key", computedKey),
-//            new NameValuePair("name", this.name),
-//            new NameValuePair("state", state.toString()),
-//            new NameValuePair("url", buildUrl),
-//        };
         ServerPullrequest.CommitBuildState commit = new ServerPullrequest.CommitBuildState();
         commit.setKey(computedKey);
         commit.setState(state);

@@ -285,6 +285,8 @@ public class BitbucketBuildRepositoryTest {
     EasyMock.expect(trigger.getCiSkipPhrases()).andReturn("");
     EasyMock.expect(trigger.getBranchesFilterBySCMIncludes()).andReturn(false);
     EasyMock.expect(trigger.getBranchesFilter()).andReturn("");
+    EasyMock.expect(trigger.isCloud()).andReturn(true);
+    EasyMock.expect(trigger.getBitbucketServer()).andReturn(null);
     EasyMock.replay(trigger);
 
     // setup mock BitbucketPullRequestsBuilder
@@ -311,7 +313,8 @@ public class BitbucketBuildRepositoryTest {
     final CloudPullrequest.Commit sourceCommit = new CloudPullrequest.Commit();
     sourceCommit.setHash("Hash");
 
-    final CloudPullrequest.Commit destCommit = null; // the crux of the test
+    final CloudPullrequest.Commit destCommit = new CloudPullrequest.Commit();
+    destCommit.setHash(null);
 
     final CloudPullrequest.Revision sourceRevision = new CloudPullrequest.Revision();
     sourceRevision.setBranch(sourceBranch);

@@ -105,7 +105,7 @@ public class CloudApiClient extends ApiClient {
         try {
             String url = rootUrl + "?pagelen=" + pageLen;
             do {
-                final JavaType type = TypeFactory.defaultInstance().constructParametricType(AbstractPullrequest.class, cls);
+                final JavaType type = TypeFactory.defaultInstance().constructParametricType(AbstractPullrequest.Response.class, cls);
                 AbstractPullrequest.Response<T> response = parse(get(url), type);
                 values.addAll(response.getValues());
                 url = response.getNext();

@@ -16,7 +16,7 @@ public class ServerBitbucketCause extends BitbucketCause {
 
     @Override
     public String getShortDescription() {
-        return getServerUrl() + "/projects/" + getRepositoryOwner() + "/repos/" + getRepositoryName() + "/pull-request/" + getPullRequestId();
+        return getServerUrl() + "/projects/" + getRepositoryOwner() + "/repos/" + getRepositoryName() + "/pull-requests/" + getPullRequestId();
     }
 
     public String getServerUrl() {

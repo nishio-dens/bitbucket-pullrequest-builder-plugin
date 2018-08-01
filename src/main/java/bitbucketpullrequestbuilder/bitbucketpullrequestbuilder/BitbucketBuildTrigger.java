@@ -41,8 +41,6 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
     private final String projectPath;
     private final String cron;
     private final String credentialsId;
-    private final String username;
-    private final String password;
     private final String repositoryOwner;
     private final String repositoryName;
     private final String branchesFilter;
@@ -64,8 +62,6 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
             String projectPath,
             String cron,
             String credentialsId,
-            String username,
-            String password,
             String repositoryOwner,
             String repositoryName,
             String branchesFilter,
@@ -82,8 +78,6 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
         this.projectPath = projectPath;
         this.cron = cron;
         this.credentialsId = credentialsId;
-        this.username = username;
-        this.password = password;
         this.repositoryOwner = repositoryOwner;
         this.repositoryName = repositoryName;
         this.branchesFilter = branchesFilter;
@@ -107,14 +101,6 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
 
     public String getCredentialsId() {
         return credentialsId;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getPassword() {
-        return password;
     }
 
     public String getRepositoryOwner() {

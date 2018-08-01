@@ -109,44 +109,12 @@ public class BitbucketBuildRepositoryTest {
   @Rule
   public JenkinsRule jRule = new JenkinsRule();  
 
-  @Test  
-  public void repositorySimpleUserPasswordTest() throws Exception {
-    BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
-      "", "@hourly",
-      "JenkinsCID",
-      "foo",
-      "bar",
-      "", "",
-      "", true,
-      "", "", "",
-      true, 
-      true,
-      false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER
-    );
-    
-    BitbucketPullRequestsBuilder builder = EasyMock.createMock(BitbucketPullRequestsBuilder.class); 
-    EasyMock.expect(builder.getTrigger()).andReturn(trigger).anyTimes();
-    EasyMock.replay(builder);
-    
-    ApiClient.HttpClientFactory httpFactory = EasyMock.createNiceMock(ApiClient.HttpClientFactory.class);
-    EasyMock.expect(httpFactory.getInstanceHttpClient()).andReturn(
-      new HttpClientInterceptor(new AssertCredentials(new UsernamePasswordCredentials("foo", "bar")))
-    ).anyTimes();
-    EasyMock.replay(httpFactory);            
-    
-    BitbucketRepository repo = new BitbucketRepository("", builder);
-    repo.init(httpFactory);
-    
-    try { repo.postPullRequestApproval("prId"); } catch(Error e) { assertTrue(e instanceof AssertionError); }
-  }
   
   @Test  
   public void repositoryCtorWithTriggerTest() throws Exception {
     BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
       "", "@hourly",
       "JenkinsCID",
-      "foo",
-      "bar",
       "", "",
       "", true,
       "", "", "",
@@ -164,15 +132,9 @@ public class BitbucketBuildRepositoryTest {
     store.addCredentials(Domain.global(), new UsernamePasswordCredentialsImpl(
       CredentialsScope.GLOBAL, "JenkinsCID", "description", "username", "password"
     ));
-    
-    ApiClient.HttpClientFactory httpFactory = EasyMock.createNiceMock(ApiClient.HttpClientFactory.class);
-    EasyMock.expect(httpFactory.getInstanceHttpClient()).andReturn(
-      new HttpClientInterceptor(new AssertCredentials(new UsernamePasswordCredentials("username", "password")))
-    ).anyTimes();
-    EasyMock.replay(httpFactory);  
-    
+
     BitbucketRepository repo = new BitbucketRepository("", builder);
-    repo.init(httpFactory);        
+    repo.init();
     
     try { repo.postPullRequestApproval("prId"); } catch(Error e) { assertTrue(e instanceof AssertionError); }                
   }
@@ -200,8 +162,6 @@ public class BitbucketBuildRepositoryTest {
     BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
       "", "@hourly",
       "JenkinsCID",
-      "foo",
-      "bar",
       "", "",
       "", true,
       "jenkins", "Jenkins", "",
@@ -247,8 +207,6 @@ public class BitbucketBuildRepositoryTest {
     BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
       "", "@hourly",
       "JenkinsCID",
-      "foo",
-      "bar",
       "", "",
       "", true,
       "jenkins-too-long-ci-key", "Jenkins", "",

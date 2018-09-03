@@ -37,7 +37,7 @@ public class BitbucketBuilds {
         if (cause == null) {
             return;
         }
-        JenkinsLocationConfiguration globalConfig = new JenkinsLocationConfiguration();
+        JenkinsLocationConfiguration globalConfig = JenkinsLocationConfiguration.get();
         String rootUrl = globalConfig.getUrl();
         if (rootUrl == null) {
             logger.warning("PLEASE SET JENKINS ROOT URL IN GLOBAL CONFIGURATION FOR BUILD STATE REPORTING");

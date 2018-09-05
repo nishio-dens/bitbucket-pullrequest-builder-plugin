@@ -50,5 +50,8 @@ public class BitbucketBuilds {
         if (this.trigger.getApproveIfSuccess() && result == Result.SUCCESS) {
             this.repository.postPullRequestApproval(cause.getPullRequestId());
         }
+        if(this.trigger.getDeclineIfFailure() && result == Result.FAILURE){
+            this.repository.postPullRequestDecline(cause.getPullRequestId());
+        }
     }
 }

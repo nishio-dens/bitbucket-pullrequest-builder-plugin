@@ -119,9 +119,11 @@ public class BitbucketBuildRepositoryTest {
       "", "",
       "", true,
       "", "", "",
-      true, 
       true,
-      false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER
+
+      true,
+      false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER,
+      true
     );
     
     BitbucketPullRequestsBuilder builder = EasyMock.createMock(BitbucketPullRequestsBuilder.class); 
@@ -152,7 +154,8 @@ public class BitbucketBuildRepositoryTest {
       "", "", "",
       true, 
       true,
-      false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER
+      false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER,
+      true
     );          
     
     BitbucketPullRequestsBuilder builder = EasyMock.createMock(BitbucketPullRequestsBuilder.class); 
@@ -207,7 +210,7 @@ public class BitbucketBuildRepositoryTest {
       "jenkins", "Jenkins", "",
       true, 
       true,
-      false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER
+      false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER,true
     );
     
     BitbucketPullRequestsBuilder builder = EasyMock.createMock(BitbucketPullRequestsBuilder.class); 
@@ -254,7 +257,8 @@ public class BitbucketBuildRepositoryTest {
       "jenkins-too-long-ci-key", "Jenkins", "",
       true, 
       true,
-      false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER
+      false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER,
+      true
     );
     
     final MessageDigest MD5 = MessageDigest.getInstance("MD5");

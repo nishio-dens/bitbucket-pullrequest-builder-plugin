@@ -54,6 +54,7 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
     private final boolean approveIfSuccess;
     private final boolean cancelOutdatedJobs;
     private final String commentTrigger;
+    private final boolean declineIfFailure;
 
     transient private BitbucketPullRequestsBuilder bitbucketPullRequestsBuilder;
 
@@ -76,7 +77,8 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
             boolean checkDestinationCommit,
             boolean approveIfSuccess,
             boolean cancelOutdatedJobs,
-            String commentTrigger
+            String commentTrigger,
+            boolean declineIfFailure
             ) throws ANTLRException {
         super(cron);
         this.projectPath = projectPath;
@@ -95,6 +97,7 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
         this.approveIfSuccess = approveIfSuccess;
         this.cancelOutdatedJobs = cancelOutdatedJobs;
         this.commentTrigger = commentTrigger;
+        this.declineIfFailure = declineIfFailure;
     }
 
     public String getProjectPath() {
@@ -161,6 +164,9 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
      */
     public String getCommentTrigger() {
         return commentTrigger;
+    }
+    public boolean getDeclineIfFailure(){
+        return declineIfFailure;
     }
 
     @Override

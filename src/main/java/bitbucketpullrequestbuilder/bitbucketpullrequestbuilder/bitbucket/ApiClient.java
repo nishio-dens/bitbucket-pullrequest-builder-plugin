@@ -197,6 +197,16 @@ public class ApiClient {
         }
         return null;
     }
+    public Pullrequest.Participant postPullRequestDecline(String pullRequestId){
+        try {
+            return parse(post(v2("/pullrequests/" + pullRequestId + "/decline"),
+                    new NameValuePair[]{}), Pullrequest.Participant.class);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Invalid pull request declined response.", e);
+            e.printStackTrace();
+        }
+        return null;
+    }
 
     private <T> List<T> getAllValues(String rootUrl, int pageLen, Class<T> cls) {
         List<T> values = new ArrayList<T>();

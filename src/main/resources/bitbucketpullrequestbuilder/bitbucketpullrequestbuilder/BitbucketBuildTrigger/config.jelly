@@ -45,4 +45,7 @@
   <f:entry title="Comment phrase to trigger build" field="commentTrigger">
     <f:textbox default="test this please"/>
   </f:entry>
+    <f:entry title="Decline if build fails?" field="declineIfFailure">
+      <f:checkbox />
+    </f:entry>
 </j:jelly>

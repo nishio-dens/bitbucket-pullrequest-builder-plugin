@@ -59,6 +59,11 @@ public class BitbucketBuilds {
     }
 
     private String getBuildUrl(String buildUrl) {
-        return getInstance().getRootUrl() + buildUrl;
+        String rootUrl = getInstance().getRootUrl();
+        if (rootUrl == null || "".equals(rootUrl)) {
+            logger.log(Level.WARNING, "Jenkins Root URL is empty, please set it on Global Configuration");
+            return "";
+        }
+        return rootUrl + buildUrl;
     }
 }

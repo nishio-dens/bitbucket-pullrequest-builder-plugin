@@ -29,6 +29,8 @@ public class BitbucketBuilds {
         }
         try {
             build.setDescription(cause.getShortDescription());
+            String buildUrl = getBuildUrl(build.getUrl());
+            repository.setBuildStatus(cause, BuildState.INPROGRESS, buildUrl);
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Can't update build description", e);
         }
@@ -39,9 +41,9 @@ public class BitbucketBuilds {
             return;
         }
 
-        buildUrl = getInstance().getRootUrl() + buildUrl;
+        String fullBuildUrl = getBuildUrl(buildUrl);
         BuildState state = result == Result.SUCCESS ? BuildState.SUCCESSFUL : BuildState.FAILED;
-        repository.setBuildStatus(cause, state, buildUrl);
+        repository.setBuildStatus(cause, state, fullBuildUrl);
 
         if (this.trigger.getApproveIfSuccess() && result == Result.SUCCESS) {
             this.repository.postPullRequestApproval(cause.getPullRequestId());
@@ -50,9 +52,13 @@ public class BitbucketBuilds {
 
     private Jenkins getInstance() {
         final Jenkins instance = Jenkins.getInstance();
-        if (instance == null){
+        if (instance == null) {
             throw new IllegalStateException("Jenkins instance is NULL!");
         }
         return instance;
+    }
+
+    private String getBuildUrl(String buildUrl) {
+        return getInstance().getRootUrl() + buildUrl;
     }
 }

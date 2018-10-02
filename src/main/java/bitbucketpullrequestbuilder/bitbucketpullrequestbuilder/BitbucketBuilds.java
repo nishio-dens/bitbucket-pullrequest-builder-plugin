@@ -2,6 +2,7 @@ package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BuildState;
 import hudson.model.*;
+import jenkins.model.Jenkins;
 import jenkins.model.JenkinsLocationConfiguration;
 
 import java.io.IOException;
@@ -40,27 +41,24 @@ public class BitbucketBuilds {
             return;
         }
 
-        buildUrl = getBuildUrl(buildUrl);
-        if (buildUrl != null) {
-            BuildState state = result == Result.SUCCESS ? BuildState.SUCCESSFUL : BuildState.FAILED;
-            repository.setBuildStatus(cause, state, buildUrl);
-        }
+        String fullBuildUrl = getBuildUrl(buildUrl);
+        BuildState state = result == Result.SUCCESS ? BuildState.SUCCESSFUL : BuildState.FAILED;
+        repository.setBuildStatus(cause, state, fullBuildUrl);
 
         if (this.trigger.getApproveIfSuccess() && result == Result.SUCCESS) {
             this.repository.postPullRequestApproval(cause.getPullRequestId());
         }
     }
 
-    private String getBuildUrl(String buildUrl) {
-        String fullBuildUrl = null;
-        JenkinsLocationConfiguration globalConfig = JenkinsLocationConfiguration.get();
-        if (globalConfig != null) {
-            if (globalConfig.getUrl() == null) {
-                logger.warning("PLEASE SET JENKINS ROOT URL IN GLOBAL CONFIGURATION FOR BUILD STATE REPORTING");
-            } else {
-                fullBuildUrl = globalConfig.getUrl() + buildUrl;
-            }
+    private Jenkins getInstance() {
+        final Jenkins instance = Jenkins.getInstance();
+        if (instance == null) {
+            throw new IllegalStateException("Jenkins instance is NULL!");
         }
-        return fullBuildUrl;
+        return instance;
+    }
+
+    private String getBuildUrl(String buildUrl) {
+        return getInstance().getRootUrl() + buildUrl;
     }
 }

@@ -1,9 +1,8 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket;
 
 import java.util.List;
-import java.util.Comparator;
-import java.util.Map;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
 
@@ -184,8 +183,27 @@ public class Pullrequest {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Comment implements Comparable<Comment> {
         private Integer id;
-        private String  filename;
-        private String  content;
+        private Content content;
+
+        public Comment() {}
+
+        public Comment(String rawContent) {
+            this.content = new Content();
+            this.content.setRaw(rawContent);
+        }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public static class Content {
+            private String raw;
+
+            public String getRaw() {
+                return raw;
+            }
+
+            public void setRaw(String raw) {
+                this.raw = raw;
+            }
+        }
 
         @Override
         public int compareTo(Comment target) {
@@ -223,47 +241,38 @@ public class Pullrequest {
             this.id = id;
         }
 
-        public String getFilename() {
-            return filename;
-        }
-
-        public void setFilename(String filename) {
-            this.filename = filename;
-        }
-
-        public String getContent() {
+        public Content getContent() {
             return content;
         }
 
-        public void setContent(Object content) {
-            if (content instanceof String) {
-                this.content = (String)content;
-            } else if (content instanceof Map){
-                this.content = (String)((Map)content).get("raw");
-            }
-            return;
+        @JsonIgnore
+        public String getContentRaw() {
+            return content.getRaw();
         }
 
+        public void setContent(Content content) {
+            this.content = content;
+        }
     }
-    
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Author {
       private String username;
       private String display_name;
       public static final String COMBINED_NAME = "%s <@%s>";
-      
+
       public String getUsername() {
           return username;
       }
       public void setUsername(String username) {
           this.username = username;
       }
-      
+
       @JsonProperty("display_name")
       public String getDisplayName() {
           return display_name;
       }
-      
+
       @JsonProperty("display_name")
       public void setDisplayName(String display_name) {
           this.display_name = display_name;
@@ -380,11 +389,11 @@ public class Pullrequest {
     public void setId(String id) {
         this.id = id;
     }
-    
+
     public Author getAuthor() {
       return this.author;
     }
-    
+
     public void setAutohor(Author author) {
       this.author = author;
     }

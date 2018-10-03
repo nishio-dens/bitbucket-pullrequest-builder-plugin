@@ -202,7 +202,7 @@ public class BitbucketRepository {
       Collections.reverse(comments);
       List<Pullrequest.Comment> filteredComments = new LinkedList<Pullrequest.Comment>();
       for(Pullrequest.Comment comment : comments) {
-        String content = comment.getContent();
+        String content = comment.getContentRaw();
         if (content == null || content.isEmpty()) continue;
         boolean isTTP = this.isTTPComment(content);
         boolean isTTPBuild = this.isTTPCommentBuildTags(content);
@@ -243,7 +243,7 @@ public class BitbucketRepository {
                 Collection<Pullrequest.Comment> filteredComments = this.filterPullRequestComments(comments);
                 boolean hasMyBuildTag = false;
                 for (Pullrequest.Comment comment : filteredComments) {
-                    String content = comment.getContent();
+                    String content = comment.getContentRaw();
                     if (this.isTTPComment(content)) {
                         rebuildCommentAvailable = true;
                         logger.log(Level.FINE,

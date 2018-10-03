@@ -2,3 +2,8 @@
 bitbucket-pullrequest-builder.iml
 target/
 work
+.settings
+.classpath
+.factorypath
+.project
+.vscode

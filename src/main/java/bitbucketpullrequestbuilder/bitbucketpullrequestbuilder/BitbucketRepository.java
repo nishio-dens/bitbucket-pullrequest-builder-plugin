@@ -20,7 +20,6 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 
-import jenkins.model.Jenkins;
 import jenkins.scm.api.SCMSource;
 import jenkins.scm.api.SCMSourceOwner;
 import jenkins.scm.api.SCMSourceOwners;
@@ -123,19 +122,9 @@ public class BitbucketRepository {
                     pullRequest.getDestination().getCommit().getHash(),
                     pullRequest.getAuthor().getCombinedUsername()
             );
-            setBuildStatus(cause, BuildState.INPROGRESS, getInstance().getRootUrl());
             this.builder.getTrigger().startJob(cause);
         }
     }
-
-    private Jenkins getInstance() {
-        final Jenkins instance = Jenkins.getInstance();
-        if (instance == null){
-            throw new IllegalStateException("Jenkins instance is NULL!");
-        }
-        return instance;
-    }
-
 
     public void setBuildStatus(BitbucketCause cause, BuildState state, String buildUrl) {
         String comment = null;

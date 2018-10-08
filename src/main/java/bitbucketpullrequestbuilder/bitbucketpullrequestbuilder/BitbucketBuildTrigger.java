@@ -215,9 +215,12 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
         Queue queue = getInstance().getQueue();
 
         for (Queue.Item item : queue.getItems()) {
-            if (hasCauseFromTheSamePullRequest(item.getCauses(), bitbucketCause)) {
-                logger.fine("Canceling item in queue: " + item);
-                queue.cancel(item);
+            if (this.getBuilder().getProject().getName().equals(item.task.getName())){
+                if (hasCauseFromTheSamePullRequest(item.getCauses(), bitbucketCause)) {
+                    logger.fine("Canceling item in queue: " + item);
+                    logger.fine("Builder = " + this.getBuilder().getProject().getName()+ "item being cancelled = "+ item.task.getName());
+                    queue.cancel(item);
+                }
             }
         }
     }
@@ -235,14 +238,16 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
         for (Object o : job.getBuilds()) {
             if (o instanceof Run) {
                 Run build = (Run) o;
-                if (build.isBuilding() && hasCauseFromTheSamePullRequest(build.getCauses(), bitbucketCause)) {
-                    logger.fine("Aborting build: " + build + " since PR is outdated");
-                    setBuildDescription(build);
-                    final Executor executor = build.getExecutor();
-                    if (executor == null){
-                        throw new IllegalStateException("Executor can't be NULL");
+                if (this.getBuilder().getProject().getName().equals(build.getParent().getFullName())){
+                    if (build.isBuilding() && hasCauseFromTheSamePullRequest(build.getCauses(), bitbucketCause)) {
+                        logger.fine("Aborting build: " + build + " since PR is outdated");
+                        setBuildDescription(build);
+                        final Executor executor = build.getExecutor();
+                        if (executor == null){
+                            throw new IllegalStateException("Executor can't be NULL");
+                        }
+                        executor.interrupt(Result.ABORTED);
                     }
-                    executor.interrupt(Result.ABORTED);
                 }
             }
         }

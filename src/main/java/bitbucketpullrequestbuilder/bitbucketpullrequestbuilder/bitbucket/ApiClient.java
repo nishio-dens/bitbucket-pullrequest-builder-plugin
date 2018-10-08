@@ -183,11 +183,13 @@ public class ApiClient {
 
     public Pullrequest.Comment postPullRequestComment(String pullRequestId, String content) {
         Pullrequest.Comment comment = new Pullrequest.Comment(content);
+        String response = "";
         try {
-            String response = post(v2("/pullrequests/" + pullRequestId + "/comments"), comment);
+            response = post(v2("/pullrequests/" + pullRequestId + "/comments"), comment);
             return parse(response, new TypeReference<Pullrequest.Comment>() {});
         } catch(Exception e) {
-            logger.log(Level.WARNING, "Invalid pull request comment response.", e);
+            logger.log(Level.WARNING, "Invalid pull request comment response <{0}>:\n{1}",
+                new Object[]{response, e});
         }
         return null;
     }
@@ -254,7 +256,7 @@ public class ApiClient {
         client.getParams().setAuthenticationPreemptive(true);
         try {
             int statusCode = client.executeMethod(req);
-            if (statusCode != HttpStatus.SC_OK &&
+            if (statusCode != HttpStatus.SC_OK && statusCode != HttpStatus.SC_CREATED &&
                 statusCode != HttpStatus.SC_ACCEPTED && statusCode != HttpStatus.SC_NO_CONTENT) {
                     logger.log(Level.WARNING, "Response status: " + req.getStatusLine() + " | URI: " + req.getURI() + " | Response body: " + req.getResponseBodyAsString());
             } else {

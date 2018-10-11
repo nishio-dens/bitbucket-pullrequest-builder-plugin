@@ -2,6 +2,7 @@ package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BuildState;
 import hudson.model.*;
+import jenkins.model.Jenkins;
 import jenkins.model.JenkinsLocationConfiguration;
 
 import java.io.IOException;
@@ -19,6 +20,7 @@ public class BitbucketBuilds {
     public BitbucketBuilds(BitbucketBuildTrigger trigger, BitbucketRepository repository) {
         this.trigger = trigger;
         this.repository = repository;
+        this.repository.init();
     }
 
     void onStarted(BitbucketCause cause, Run<?, ?> build) {
@@ -27,6 +29,8 @@ public class BitbucketBuilds {
         }
         try {
             build.setDescription(cause.getShortDescription());
+            String buildUrl = getBuildUrl(build.getUrl());
+            repository.setBuildStatus(cause, BuildState.INPROGRESS, buildUrl);
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Can't update build description", e);
         }
@@ -36,18 +40,30 @@ public class BitbucketBuilds {
         if (cause == null) {
             return;
         }
-        JenkinsLocationConfiguration globalConfig = new JenkinsLocationConfiguration();
-        String rootUrl = globalConfig.getUrl();
-        if (rootUrl == null) {
-            logger.warning("PLEASE SET JENKINS ROOT URL IN GLOBAL CONFIGURATION FOR BUILD STATE REPORTING");
-        } else {
-            buildUrl = rootUrl + buildUrl;
-            BuildState state = result == Result.SUCCESS ? BuildState.SUCCESSFUL : BuildState.FAILED;
-            repository.setBuildStatus(cause, state, buildUrl);
-        }
+
+        String fullBuildUrl = getBuildUrl(buildUrl);
+        BuildState state = result == Result.SUCCESS ? BuildState.SUCCESSFUL : BuildState.FAILED;
+        repository.setBuildStatus(cause, state, fullBuildUrl);
 
         if (this.trigger.getApproveIfSuccess() && result == Result.SUCCESS) {
             this.repository.postPullRequestApproval(cause.getPullRequestId());
         }
+    }
+
+    private Jenkins getInstance() {
+        final Jenkins instance = Jenkins.getInstance();
+        if (instance == null) {
+            throw new IllegalStateException("Jenkins instance is NULL!");
+        }
+        return instance;
+    }
+
+    private String getBuildUrl(String buildUrl) {
+        String rootUrl = getInstance().getRootUrl();
+        if (rootUrl == null || "".equals(rootUrl)) {
+            logger.log(Level.WARNING, "Jenkins Root URL is empty, please set it on Global Configuration");
+            return "";
+        }
+        return rootUrl + buildUrl;
     }
 }

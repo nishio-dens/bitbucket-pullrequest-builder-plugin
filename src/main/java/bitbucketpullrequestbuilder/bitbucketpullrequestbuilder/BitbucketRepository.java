@@ -143,6 +143,18 @@ public class BitbucketRepository {
     }
 
     private BitbucketCause createCause(AbstractPullrequest pullRequest) {
+        // pullRequest.getDestination().getCommit() may return null for pull requests with merge conflicts
+        // * see: https://github.com/nishio-dens/bitbucket-pullrequest-builder-plugin/issues/119
+        // * see: https://github.com/nishio-dens/bitbucket-pullrequest-builder-plugin/issues/98
+        final String destinationCommitHash;
+        if (pullRequest.getDestination().getCommit() == null) {
+            logger.log(Level.INFO, "Pull request #{0} ''{1}'' in repo ''{2}'' has a null value for destination commit.",
+                    new Object[]{pullRequest.getId(), pullRequest.getTitle(), pullRequest.getDestination().getRepository().getRepositoryName()});
+            destinationCommitHash = null;
+        } else {
+            destinationCommitHash = pullRequest.getDestination().getCommit().getHash();
+        }
+
         final BitbucketCause cause;
         if (this.trigger.isCloud()) {
             cause = new CloudBitbucketCause(
@@ -155,7 +167,7 @@ public class BitbucketRepository {
                 pullRequest.getDestination().getRepository().getRepositoryName(),
                 pullRequest.getTitle(),
                 pullRequest.getSource().getCommit().getHash(),
-                pullRequest.getDestination().getCommit().getHash(),
+                    destinationCommitHash,
                 pullRequest.getAuthor().getCombinedUsername()
             );
         } else {
@@ -340,22 +352,6 @@ public class BitbucketRepository {
     }
 
     private boolean isFilteredBuild(AbstractPullrequest pullRequest) {
-
-        final String pullRequestId = pullRequest.getId();
-        final String pullRequestTitle = pullRequest.getTitle();
-        final String destinationRepoName = pullRequest.getDestination().getRepository().getRepositoryName();
-
-        // pullRequest.getDestination().getCommit() may return null for pull requests with merge conflicts
-        // * see: https://github.com/nishio-dens/bitbucket-pullrequest-builder-plugin/issues/119
-        // * see: https://github.com/nishio-dens/bitbucket-pullrequest-builder-plugin/issues/98
-        final String destinationCommitHash;
-        if (pullRequest.getDestination().getCommit() == null) {
-            logger.log(Level.INFO, "Pull request #{0} ''{1}'' in repo ''{2}'' has a null value for destination commit.",
-                    new Object[]{pullRequestId, pullRequestTitle, destinationRepoName});
-            destinationCommitHash = null;
-        } else {
-            destinationCommitHash = pullRequest.getDestination().getCommit().getHash();
-        }
 
         BitbucketCause cause = createCause(pullRequest);
 

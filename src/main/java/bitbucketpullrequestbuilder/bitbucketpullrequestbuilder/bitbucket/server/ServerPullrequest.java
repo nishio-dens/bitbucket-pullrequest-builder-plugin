@@ -191,12 +191,8 @@ public class ServerPullrequest extends AbstractPullrequest {
         public int compareTo(AbstractPullrequest.Comment target) {
             if (target == null){
                 return -1;
-            } else if (this.getId() > target.getId()) {
-                return 1;
-            } else if (this.getId().equals(target.getId())) {
-                return 0;
             } else {
-                return -1;
+                return this.getId().compareTo(target.getId());
             }
         }
 

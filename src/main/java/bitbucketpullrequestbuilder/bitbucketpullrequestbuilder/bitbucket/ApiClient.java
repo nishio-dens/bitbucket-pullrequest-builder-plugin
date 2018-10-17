@@ -1,32 +1,29 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket;
 
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.server.ServerPullrequest;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.*;
 import org.apache.commons.httpclient.methods.DeleteMethod;
-import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.httpclient.params.HttpClientParams;
+import org.apache.commons.httpclient.util.EncodingUtil;
 import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.JavaType;
 import org.codehaus.jackson.type.TypeReference;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import jenkins.model.Jenkins;
 import hudson.ProxyConfiguration;
-
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.httpclient.methods.PutMethod;
-import org.apache.commons.httpclient.util.EncodingUtil;
+import jenkins.model.Jenkins;
 
 /**
  * Created by nishio
@@ -46,10 +43,10 @@ public abstract class ApiClient {
 
     private static MessageDigest SHA1 = null;
 
-    public static class HttpClientFactory {    
+    public static class HttpClientFactory {
         public static final HttpClientFactory INSTANCE = new HttpClientFactory();
         private static final int DEFAULT_TIMEOUT = 60000;
-        
+
         public HttpClient getInstanceHttpClient() {
             HttpClient client = new HttpClient();
 
@@ -73,7 +70,7 @@ public abstract class ApiClient {
                 client.getState().setProxyCredentials(AuthScope.ANY,
                     new UsernamePasswordCredentials(username, password));
             }
-            
+
             return client;
         }
 
@@ -86,40 +83,38 @@ public abstract class ApiClient {
         }
     }
 
-
-    
     public <T extends HttpClientFactory> ApiClient(
-        String username, String password, 
-        String owner, String repositoryName, 
-        String key, String name, 
+        String username, String password,
+        String owner, String repositoryName,
+        String key, String name,
         T httpFactory
     ) {
         this.credentials = new UsernamePasswordCredentials(username, password);
         this.owner = owner;
         this.repositoryName = repositoryName;
         this.key = key;
-        this.name = name;        
+        this.name = name;
         this.factory = httpFactory != null ? httpFactory : HttpClientFactory.INSTANCE;
     }
-    
+
     /**
-     * Retrun 
+     * Retrun
      * @param keyExPart
-     * @return key parameter for call BitBucket API 
+     * @return key parameter for call BitBucket API
      */
     protected String computeAPIKey(String keyExPart) {
       String computedKey = String.format(COMPUTED_KEY_FORMAT, this.key, keyExPart);
-      
+
       if (computedKey.length() > MAX_KEY_SIZE_BB_API) {
-        try { 
-          if (SHA1 == null) SHA1 = MessageDigest.getInstance("SHA1"); 
+        try {
+          if (SHA1 == null) SHA1 = MessageDigest.getInstance("SHA1");
           return new String(Hex.encodeHex(SHA1.digest(computedKey.getBytes("UTF-8"))));
-        } catch(NoSuchAlgorithmException e) { 
+        } catch(NoSuchAlgorithmException e) {
           logger.log(Level.WARNING, "Failed to create hash provider", e);
         } catch (UnsupportedEncodingException e) {
           logger.log(Level.WARNING, "Failed to create hash provider", e);
         }
-      }      
+      }
       return (computedKey.length() <= MAX_KEY_SIZE_BB_API) ?  computedKey : computedKey.substring(0, MAX_KEY_SIZE_BB_API);
     }
 
@@ -159,7 +154,7 @@ public abstract class ApiClient {
     protected void delete(String path) {
          send(new DeleteMethod(path));
     }
-    
+
     protected void put(String path, NameValuePair[] data) {
         PutMethod req = new PutMethod(path);
         req.setRequestBody(EncodingUtil.formUrlEncode(data, "utf-8"));

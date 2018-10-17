@@ -50,8 +50,6 @@ public abstract class AbstractPullrequest {
     public interface Comment extends Comparable<Comment> {
         Integer getId();
 
-        String getFilename();
-
         String getContent();
     }
 

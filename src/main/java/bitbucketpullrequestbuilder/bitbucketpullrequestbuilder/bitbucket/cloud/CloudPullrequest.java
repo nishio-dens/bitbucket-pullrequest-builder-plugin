@@ -1,10 +1,9 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud;
 
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.AbstractPullrequest;
+import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
-
-import java.util.Map;
 
 /**
  * POJOs representing the pull-requests extracted from the
@@ -166,8 +165,13 @@ public class CloudPullrequest extends AbstractPullrequest {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Comment implements AbstractPullrequest.Comment {
         private Integer id;
-        private String  filename;
-        private String  content;
+        private String content;
+
+        public Comment() {}
+
+        public Comment(String rawContent) {
+            this.content = rawContent;
+        }
 
         @Override
         public int compareTo(AbstractPullrequest.Comment target) {
@@ -205,27 +209,13 @@ public class CloudPullrequest extends AbstractPullrequest {
             this.id = id;
         }
 
-        public String getFilename() {
-            return filename;
-        }
-
-        public void setFilename(String filename) {
-            this.filename = filename;
-        }
-
         public String getContent() {
             return content;
         }
 
-        public void setContent(Object content) {
-            if (content instanceof String) {
-                this.content = (String)content;
-            } else if (content instanceof Map){
-                this.content = (String)((Map)content).get("raw");
-            }
-            return;
+        public void setContent(String content) {
+            this.content = content;
         }
-
     }
 
     //-------------------- only getters and setters follow -----------------

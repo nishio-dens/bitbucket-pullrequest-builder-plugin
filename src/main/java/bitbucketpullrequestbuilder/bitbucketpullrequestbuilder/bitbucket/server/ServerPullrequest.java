@@ -185,7 +185,6 @@ public class ServerPullrequest extends AbstractPullrequest {
     public static class Comment implements AbstractPullrequest.Comment {
 
         private Integer id;
-        private String  filename;
         private String  content;
 
         @Override
@@ -205,10 +204,6 @@ public class ServerPullrequest extends AbstractPullrequest {
             this.id = id;
         }
 
-        public void setFilename(String filename) {
-            this.filename = filename;
-        }
-
         public void setContent(String content) {
             this.content = content;
         }
@@ -216,11 +211,6 @@ public class ServerPullrequest extends AbstractPullrequest {
         @Override
         public Integer getId() {
             return id;
-        }
-
-        @Override
-        public String getFilename() {
-            return filename;
         }
 
         @Override
@@ -255,7 +245,6 @@ public class ServerPullrequest extends AbstractPullrequest {
         public Comment toComment() {
             final Comment comment = new Comment();
             comment.setId(id);
-            comment.setFilename(path);
             comment.setContent(text);
             return comment;
         }

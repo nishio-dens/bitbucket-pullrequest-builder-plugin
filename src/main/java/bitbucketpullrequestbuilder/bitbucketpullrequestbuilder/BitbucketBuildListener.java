@@ -1,5 +1,6 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudBitbucketCause;
 import hudson.Extension;
 import hudson.model.AbstractBuild;
 import hudson.model.Job;

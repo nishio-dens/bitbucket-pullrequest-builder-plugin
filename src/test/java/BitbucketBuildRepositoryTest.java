@@ -4,9 +4,11 @@ import antlr.ANTLRException;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketBuildTrigger;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketPullRequestsBuilder;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketRepository;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.AbstractPullrequest;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
 
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudApiClient;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudPullrequest;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsStore;
@@ -112,7 +114,7 @@ public class BitbucketBuildRepositoryTest {
   @Test  
   public void repositorySimpleUserPasswordTest() throws Exception {
     BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
-      "", "@hourly",
+      "", "","@hourly",
       "JenkinsCID",
       "foo",
       "bar",
@@ -143,7 +145,7 @@ public class BitbucketBuildRepositoryTest {
   @Test  
   public void repositoryCtorWithTriggerTest() throws Exception {
     BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
-      "", "@hourly",
+      "", "","@hourly",
       "JenkinsCID",
       "foo",
       "bar",
@@ -198,7 +200,7 @@ public class BitbucketBuildRepositoryTest {
   @Test  
   public void repositoryProjectIdTest() throws ANTLRException, NoSuchAlgorithmException, UnsupportedEncodingException {
     BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
-      "", "@hourly",
+      "", "","@hourly",
       "JenkinsCID",
       "foo",
       "bar",
@@ -245,7 +247,7 @@ public class BitbucketBuildRepositoryTest {
   @Test  
   public void triggerLongCIKeyTest() throws ANTLRException, NoSuchAlgorithmException {        
     BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
-      "", "@hourly",
+      "", "","@hourly",
       "JenkinsCID",
       "foo",
       "bar",
@@ -283,6 +285,8 @@ public class BitbucketBuildRepositoryTest {
     EasyMock.expect(trigger.getCiSkipPhrases()).andReturn("");
     EasyMock.expect(trigger.getBranchesFilterBySCMIncludes()).andReturn(false);
     EasyMock.expect(trigger.getBranchesFilter()).andReturn("");
+    EasyMock.expect(trigger.isCloud()).andReturn(true);
+    EasyMock.expect(trigger.getBitbucketServer()).andReturn(null);
     EasyMock.replay(trigger);
 
     // setup mock BitbucketPullRequestsBuilder
@@ -292,36 +296,37 @@ public class BitbucketBuildRepositoryTest {
     EasyMock.replay(builder);
 
     // setup PRs to return from mock ApiClient
-    final Pullrequest pullRequest = new Pullrequest();
+    final CloudPullrequest pullRequest = new CloudPullrequest();
 
-    final Pullrequest.Repository sourceRepo = new Pullrequest.Repository();
+    final CloudPullrequest.Repository sourceRepo = new CloudPullrequest.Repository();
     sourceRepo.setFullName("Owner/Name");
 
-    final Pullrequest.Repository destRepo = new Pullrequest.Repository();
+    final CloudPullrequest.Repository destRepo = new CloudPullrequest.Repository();
     destRepo.setFullName("Owner/Name");
 
-    final Pullrequest.Branch sourceBranch = new Pullrequest.Branch();
+    final CloudPullrequest.Branch sourceBranch = new CloudPullrequest.Branch();
     sourceBranch.setName("Name");
 
-    final Pullrequest.Branch destBranch = new Pullrequest.Branch();
+    final CloudPullrequest.Branch destBranch = new CloudPullrequest.Branch();
     destBranch.setName("Name");
 
-    final Pullrequest.Commit sourceCommit = new Pullrequest.Commit();
+    final CloudPullrequest.Commit sourceCommit = new CloudPullrequest.Commit();
     sourceCommit.setHash("Hash");
 
-    final Pullrequest.Commit destCommit = null; // the crux of the test
+    final CloudPullrequest.Commit destCommit = new CloudPullrequest.Commit();
+    destCommit.setHash(null);
 
-    final Pullrequest.Revision sourceRevision = new Pullrequest.Revision();
+    final CloudPullrequest.Revision sourceRevision = new CloudPullrequest.Revision();
     sourceRevision.setBranch(sourceBranch);
     sourceRevision.setRepository(sourceRepo);
     sourceRevision.setCommit(sourceCommit);
 
-    final Pullrequest.Revision destRevision = new Pullrequest.Revision();
+    final CloudPullrequest.Revision destRevision = new CloudPullrequest.Revision();
     destRevision.setBranch(destBranch);
     destRevision.setRepository(destRepo);
     destRevision.setCommit(destCommit);
 
-    final Pullrequest.Author author = new Pullrequest.Author();
+    final CloudPullrequest.Author author = new CloudPullrequest.Author();
     author.setDisplayName("DisplayName");
     author.setUsername("Username");
 
@@ -330,12 +335,12 @@ public class BitbucketBuildRepositoryTest {
     pullRequest.setId("Id");
     pullRequest.setTitle("Title");
     pullRequest.setState("OPEN");
-    pullRequest.setAutohor(author);
+    pullRequest.setAuthor(author);
 
-    final List<Pullrequest> pullRequests = new ArrayList<>(Arrays.asList(pullRequest));
+    final List<CloudPullrequest> pullRequests = new ArrayList<>(Arrays.asList(pullRequest));
 
     // setup mock ApiClient
-    final ApiClient client = EasyMock.createNiceMock(ApiClient.class);
+    final CloudApiClient client = EasyMock.createNiceMock(CloudApiClient.class);
     EasyMock.expect(client.getPullRequests()).andReturn(pullRequests);
     EasyMock.replay(client);
 
@@ -346,7 +351,7 @@ public class BitbucketBuildRepositoryTest {
     repo.init(client);
 
     // assert
-    Collection<Pullrequest> targetPullRequests = repo.getTargetPullRequests();
+    Collection<CloudPullrequest> targetPullRequests = repo.getTargetPullRequests();
 
     assertEquals(pullRequests.size(), targetPullRequests.size());
     assertEquals(pullRequest, targetPullRequests.iterator().next());

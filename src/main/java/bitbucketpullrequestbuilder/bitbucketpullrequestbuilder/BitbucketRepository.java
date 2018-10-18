@@ -7,19 +7,24 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.AbstractPullrequest;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BuildState;
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudBitbucketCause;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudApiClient;
 
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.server.ServerApiClient;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.server.ServerBitbucketCause;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 
+import jenkins.model.Jenkins;
 import jenkins.scm.api.SCMSource;
 import jenkins.scm.api.SCMSourceOwner;
 import jenkins.scm.api.SCMSourceOwners;
@@ -75,24 +80,44 @@ public class BitbucketRepository {
                 username = credentials.getUsername();
                 password = credentials.getPassword().getPlainText();
             }
-            this.client = new ApiClient(
-                username,
-                password,
-                trigger.getRepositoryOwner(),
-                trigger.getRepositoryName(),
-                trigger.getCiKey(),
-                trigger.getCiName(),
-                httpFactory
-            );
 
+            if (this.trigger.isCloud()) {
+                this.client = createCloudClient(httpFactory, username, password);
+            } else {
+                this.client = createServerClient(httpFactory, username, password);
+            }
         } else this.client = client;
     }
 
-    public Collection<Pullrequest> getTargetPullRequests() {
+    private <T extends ApiClient.HttpClientFactory> CloudApiClient createCloudClient(T httpFactory, String username, String password) {
+        return new CloudApiClient(
+            username,
+            password,
+            trigger.getRepositoryOwner(),
+            trigger.getRepositoryName(),
+            trigger.getCiKey(),
+            trigger.getCiName(),
+            httpFactory
+        );
+    }
+
+    private <T extends ApiClient.HttpClientFactory> ServerApiClient createServerClient(T httpFactory, String username, String password) {
+        return new ServerApiClient(
+            trigger.getBitbucketServer(),
+            username,
+            password,
+            trigger.getRepositoryOwner(),
+            trigger.getRepositoryName(),
+            trigger.getCiKey(),
+            trigger.getCiName(),
+            httpFactory);
+    }
+
+    public <T extends AbstractPullrequest> List<T> getTargetPullRequests() {
         logger.fine("Fetch PullRequests.");
-        List<Pullrequest> pullRequests = client.getPullRequests();
-        List<Pullrequest> targetPullRequests = new ArrayList<Pullrequest>();
-        for(Pullrequest pullRequest : pullRequests) {
+        List<T> pullRequests = client.getPullRequests();
+        List<T> targetPullRequests = new ArrayList<>();
+        for(T pullRequest : pullRequests) {
             if (isBuildTarget(pullRequest)) {
                 targetPullRequests.add(pullRequest);
             }
@@ -104,27 +129,74 @@ public class BitbucketRepository {
       return this.client;
     }
 
-    public void addFutureBuildTasks(Collection<Pullrequest> pullRequests) {
-        for(Pullrequest pullRequest : pullRequests) {
+    public void addFutureBuildTasks(Collection<AbstractPullrequest> pullRequests) {
+        for(AbstractPullrequest pullRequest : pullRequests) {
             if ( this.trigger.getApproveIfSuccess() ) {
                 deletePullRequestApproval(pullRequest.getId());
             }
-            BitbucketCause cause = new BitbucketCause(
-                    pullRequest.getSource().getBranch().getName(),
-                    pullRequest.getDestination().getBranch().getName(),
-                    pullRequest.getSource().getRepository().getOwnerName(),
-                    pullRequest.getSource().getRepository().getRepositoryName(),
-                    pullRequest.getId(),
-                    pullRequest.getDestination().getRepository().getOwnerName(),
-                    pullRequest.getDestination().getRepository().getRepositoryName(),
-                    pullRequest.getTitle(),
-                    pullRequest.getSource().getCommit().getHash(),
-                    pullRequest.getDestination().getCommit().getHash(),
-                    pullRequest.getAuthor().getCombinedUsername()
-            );
+
+            final BitbucketCause cause = createCause(pullRequest);
+
+            setBuildStatus(cause, BuildState.INPROGRESS, getInstance().getRootUrl());
             this.builder.getTrigger().startJob(cause);
         }
     }
+
+    private BitbucketCause createCause(AbstractPullrequest pullRequest) {
+        // pullRequest.getDestination().getCommit() may return null for pull requests with merge conflicts
+        // * see: https://github.com/nishio-dens/bitbucket-pullrequest-builder-plugin/issues/119
+        // * see: https://github.com/nishio-dens/bitbucket-pullrequest-builder-plugin/issues/98
+        final String destinationCommitHash;
+        if (pullRequest.getDestination().getCommit() == null) {
+            logger.log(Level.INFO, "Pull request #{0} ''{1}'' in repo ''{2}'' has a null value for destination commit.",
+                    new Object[]{pullRequest.getId(), pullRequest.getTitle(), pullRequest.getDestination().getRepository().getRepositoryName()});
+            destinationCommitHash = null;
+        } else {
+            destinationCommitHash = pullRequest.getDestination().getCommit().getHash();
+        }
+
+        final BitbucketCause cause;
+        if (this.trigger.isCloud()) {
+            cause = new CloudBitbucketCause(
+                pullRequest.getSource().getBranch().getName(),
+                pullRequest.getDestination().getBranch().getName(),
+                pullRequest.getSource().getRepository().getOwnerName(),
+                pullRequest.getSource().getRepository().getRepositoryName(),
+                pullRequest.getId(),
+                pullRequest.getDestination().getRepository().getOwnerName(),
+                pullRequest.getDestination().getRepository().getRepositoryName(),
+                pullRequest.getTitle(),
+                pullRequest.getSource().getCommit().getHash(),
+                    destinationCommitHash,
+                pullRequest.getAuthor().getCombinedUsername()
+            );
+        } else {
+            cause = new ServerBitbucketCause(
+                trigger.getBitbucketServer(),
+                pullRequest.getSource().getBranch().getName(),
+                pullRequest.getDestination().getBranch().getName(),
+                pullRequest.getSource().getRepository().getOwnerName(),
+                pullRequest.getSource().getRepository().getRepositoryName(),
+                pullRequest.getId(),
+                pullRequest.getDestination().getRepository().getOwnerName(),
+                pullRequest.getDestination().getRepository().getRepositoryName(),
+                pullRequest.getTitle(),
+                pullRequest.getSource().getCommit().getHash(),
+                pullRequest.getDestination().getCommit().getHash(),
+                pullRequest.getAuthor().getCombinedUsername()
+            );
+        }
+        return cause;
+    }
+
+    private Jenkins getInstance() {
+        final Jenkins instance = Jenkins.getInstance();
+        if (instance == null){
+            throw new IllegalStateException("Jenkins instance is NULL!");
+        }
+        return instance;
+    }
+
 
     public void setBuildStatus(BitbucketCause cause, BuildState state, String buildUrl) {
         String comment = null;
@@ -196,13 +268,13 @@ public class BitbucketRepository {
       return content.toLowerCase().contains(BUILD_REQUEST_DONE_MARKER.toLowerCase());
     }
 
-    public List<Pullrequest.Comment> filterPullRequestComments(List<Pullrequest.Comment> comments) {
+    public List<AbstractPullrequest.Comment> filterPullRequestComments(List<AbstractPullrequest.Comment> comments) {
       logger.fine("Filter PullRequest Comments.");
       Collections.sort(comments);
       Collections.reverse(comments);
-      List<Pullrequest.Comment> filteredComments = new LinkedList<Pullrequest.Comment>();
-      for(Pullrequest.Comment comment : comments) {
-        String content = comment.getContentRaw();
+      List<AbstractPullrequest.Comment> filteredComments = new LinkedList<AbstractPullrequest.Comment>();
+      for(AbstractPullrequest.Comment comment : comments) {
+        String content = comment.getContent();
         if (content == null || content.isEmpty()) continue;
         boolean isTTP = this.isTTPComment(content);
         boolean isTTPBuild = this.isTTPCommentBuildTags(content);
@@ -212,19 +284,19 @@ public class BitbucketRepository {
       return filteredComments;
     }
 
-    private boolean isBuildTarget(Pullrequest pullRequest) {
+    private boolean isBuildTarget(AbstractPullrequest pullRequest) {
         if (pullRequest.getState() != null && pullRequest.getState().equals("OPEN")) {
             if (isSkipBuild(pullRequest.getTitle()) || !isFilteredBuild(pullRequest)) {
                 return false;
             }
 
-            Pullrequest.Revision source = pullRequest.getSource();
+            AbstractPullrequest.Revision source = pullRequest.getSource();
             String sourceCommit = source.getCommit().getHash();
-            Pullrequest.Revision destination = pullRequest.getDestination();
+            AbstractPullrequest.Revision destination = pullRequest.getDestination();
             String owner = destination.getRepository().getOwnerName();
             String repositoryName = destination.getRepository().getRepositoryName();
 
-            Pullrequest.Repository sourceRepository = source.getRepository();
+            AbstractPullrequest.Repository sourceRepository = source.getRepository();
             String buildKeyPart = this.builder.getProjectId();
 
             final boolean commitAlreadyBeenProcessed = this.client.hasBuildStatus(
@@ -236,14 +308,14 @@ public class BitbucketRepository {
             );
 
             final String id = pullRequest.getId();
-            List<Pullrequest.Comment> comments = client.getPullRequestComments(owner, repositoryName, id);
+            List<AbstractPullrequest.Comment> comments = client.getPullRequestComments(owner, repositoryName, id);
 
             boolean rebuildCommentAvailable = false;
             if (comments != null) {
-                Collection<Pullrequest.Comment> filteredComments = this.filterPullRequestComments(comments);
+                Collection<AbstractPullrequest.Comment> filteredComments = this.filterPullRequestComments(comments);
                 boolean hasMyBuildTag = false;
-                for (Pullrequest.Comment comment : filteredComments) {
-                    String content = comment.getContentRaw();
+                for (AbstractPullrequest.Comment comment : filteredComments) {
+                    String content = comment.getContent();
                     if (this.isTTPComment(content)) {
                         rebuildCommentAvailable = true;
                         logger.log(Level.FINE,
@@ -279,37 +351,9 @@ public class BitbucketRepository {
         return false;
     }
 
-    private boolean isFilteredBuild(Pullrequest pullRequest) {
+    private boolean isFilteredBuild(AbstractPullrequest pullRequest) {
 
-        final String pullRequestId = pullRequest.getId();
-        final String pullRequestTitle = pullRequest.getTitle();
-        final String destinationRepoName = pullRequest.getDestination().getRepository().getRepositoryName();
-
-        // pullRequest.getDestination().getCommit() may return null for pull requests with merge conflicts
-        // * see: https://github.com/nishio-dens/bitbucket-pullrequest-builder-plugin/issues/119
-        // * see: https://github.com/nishio-dens/bitbucket-pullrequest-builder-plugin/issues/98
-        final String destinationCommitHash;
-        if (pullRequest.getDestination().getCommit() == null) {
-            logger.log(Level.INFO, "Pull request #{0} ''{1}'' in repo ''{2}'' has a null value for destination commit.",
-                    new Object[]{pullRequestId, pullRequestTitle, destinationRepoName});
-            destinationCommitHash = null;
-        } else {
-            destinationCommitHash = pullRequest.getDestination().getCommit().getHash();
-        }
-
-        BitbucketCause cause = new BitbucketCause(
-          pullRequest.getSource().getBranch().getName(),
-          pullRequest.getDestination().getBranch().getName(),
-          pullRequest.getSource().getRepository().getOwnerName(),
-          pullRequest.getSource().getRepository().getRepositoryName(),
-          pullRequestId,
-          pullRequest.getDestination().getRepository().getOwnerName(),
-          destinationRepoName,
-          pullRequestTitle,
-          pullRequest.getSource().getCommit().getHash(),
-          destinationCommitHash,
-          pullRequest.getAuthor().getCombinedUsername()
-        );
+        BitbucketCause cause = createCause(pullRequest);
 
         //@FIXME: Way to iterate over all available SCMSources
         List<SCMSource> sources = new LinkedList<SCMSource>();

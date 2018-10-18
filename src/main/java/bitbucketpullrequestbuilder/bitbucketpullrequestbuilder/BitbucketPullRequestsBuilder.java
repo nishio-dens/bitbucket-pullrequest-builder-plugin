@@ -1,6 +1,7 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.AbstractPullrequest;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudPullrequest;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
@@ -34,7 +35,7 @@ public class BitbucketPullRequestsBuilder {
     public void run() {
         logger.fine("Build Start.");
         this.repository.init();
-        Collection<Pullrequest> targetPullRequests = this.repository.getTargetPullRequests();
+        Collection<AbstractPullrequest> targetPullRequests = this.repository.getTargetPullRequests();
         this.repository.addFutureBuildTasks(targetPullRequests);
     }
 

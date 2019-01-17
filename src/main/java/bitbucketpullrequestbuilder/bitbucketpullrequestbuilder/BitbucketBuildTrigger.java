@@ -17,11 +17,13 @@ import jenkins.model.Jenkins;
 import jenkins.model.ParameterizedJobMixIn;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.jgit.transport.URIish;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -214,7 +216,16 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
         return retrieveScheduleJob(this.job).scheduleBuild2(0,
                 new CauseAction(cause),
                 new ParametersAction(new ArrayList(values.values())),
-                new RevisionParameterAction(cause.getSourceCommitHash()));
+                new RevisionParameterAction(cause.getSourceCommitHash(), getBitbucketRepoUrl(cause.getRepositoryOwner(), cause.getRepositoryName())));
+    }
+
+    private URIish getBitbucketRepoUrl(String repoOwner, String repoName) {
+        try{
+            return new URIish(String.format("git@bitbucket.org:%s/%s.git", repoOwner, repoName));
+        } catch (URISyntaxException e) {
+            logger.log(Level.SEVERE, "Unable to create URIish for bitbucket url, checking out the pull request branch may fail.", e);
+            return null;
+        }
     }
 
     private void cancelPreviousJobsInQueueThatMatch(@Nonnull BitbucketCause bitbucketCause) {

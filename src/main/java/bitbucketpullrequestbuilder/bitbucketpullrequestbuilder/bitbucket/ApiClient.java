@@ -174,7 +174,7 @@ public abstract class ApiClient {
                 logger.log(Level.WARNING, "Response status: " + req.getStatusLine()+" URI: "+req.getURI());
                 logger.log(Level.WARNING, IOUtils.toString(req.getResponseBodyAsStream()));
             } else {
-                return IOUtils.toString(req.getResponseBodyAsStream());
+                return req.getResponseBodyAsString();
             }
         } catch (HttpException e) {
             logger.log(Level.WARNING, "Failed to send request.", e);

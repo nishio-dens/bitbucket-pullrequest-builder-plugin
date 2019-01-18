@@ -8,7 +8,6 @@ import org.apache.commons.httpclient.methods.*;
 import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.util.EncodingUtil;
-import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.JavaType;
 import org.codehaus.jackson.type.TypeReference;
@@ -172,7 +171,7 @@ public abstract class ApiClient {
                 return null;
             } else if (statusCode != HttpStatus.SC_OK) {
                 logger.log(Level.WARNING, "Response status: " + req.getStatusLine()+" URI: "+req.getURI());
-                logger.log(Level.WARNING, IOUtils.toString(req.getResponseBodyAsStream()));
+                logger.log(Level.WARNING, req.getResponseBodyAsString());
             } else {
                 return req.getResponseBodyAsString();
             }

@@ -1,37 +1,38 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
-import java.util.logging.Logger;
-
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.AbstractPullrequest;
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BuildState;
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudBitbucketCause;
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudApiClient;
-
 import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.server.ServerApiClient;
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.server.ServerBitbucketCause;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 
+import org.apache.commons.lang.StringUtils;
+
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.AbstractPullrequest;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BuildState;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudApiClient;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudBitbucketCause;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.server.ServerApiClient;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.server.ServerBitbucketCause;
+import hudson.model.Item;
+import hudson.security.ACL;
 import jenkins.model.Jenkins;
 import jenkins.scm.api.SCMSource;
 import jenkins.scm.api.SCMSourceOwner;
 import jenkins.scm.api.SCMSourceOwners;
-
-import org.apache.commons.lang.StringUtils;
-
-import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
 
 /**
  * Created by nishio
@@ -47,13 +48,11 @@ public class BitbucketRepository {
      */
     public static final String DEFAULT_COMMENT_TRIGGER = "test this please";
 
-    private String projectPath;
     private BitbucketPullRequestsBuilder builder;
     private BitbucketBuildTrigger trigger;
     private ApiClient client;
 
     public BitbucketRepository(String projectPath, BitbucketPullRequestsBuilder builder) {
-        this.projectPath = projectPath;
         this.builder = builder;
     }
 
@@ -208,7 +207,7 @@ public class BitbucketRepository {
         logger.fine("setBuildStatus " + state + " for commit: " + sourceCommit + " with url " + buildUrl);
 
         if (state == BuildState.FAILED || state == BuildState.SUCCESSFUL) {
-            comment = String.format(BUILD_DESCRIPTION, builder.getProject().getDisplayName(), sourceCommit, destinationBranch);
+            comment = String.format(BUILD_DESCRIPTION, builder.getJob().getDisplayName(), sourceCommit, destinationBranch);
         }
 
         this.client.setBuildStatus(owner, repository, sourceCommit, state, buildUrl, comment, this.builder.getProjectId());
@@ -371,9 +370,14 @@ public class BitbucketRepository {
     private StandardUsernamePasswordCredentials getCredentials(String credentialsId) {
         if (null == credentialsId) return null;
         return CredentialsMatchers
-                .firstOrNull(
-                        CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class),
-                        CredentialsMatchers.allOf(CredentialsMatchers.withId(credentialsId),
-                                instanceOf(UsernamePasswordCredentials.class)));
+            .firstOrNull(
+                CredentialsProvider.lookupCredentials(
+                    StandardUsernamePasswordCredentials.class,
+                    (Item) null,
+                    ACL.SYSTEM,
+                    (DomainRequirement) null
+                ),
+                CredentialsMatchers.allOf(CredentialsMatchers.withId(credentialsId), instanceOf(UsernamePasswordCredentials.class))
+            );
     }
 }

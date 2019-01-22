@@ -19,7 +19,7 @@ import org.apache.commons.codec.binary.Hex;
  */
 public class BitbucketPullRequestsBuilder {
     private static final Logger logger = Logger.getLogger(BitbucketBuildTrigger.class.getName());
-    private Job<?, ?> project;
+    private Job<?, ?> job;
     private BitbucketBuildTrigger trigger;
     private BitbucketRepository repository;
     private BitbucketBuilds builds;
@@ -33,14 +33,13 @@ public class BitbucketPullRequestsBuilder {
     }
 
     public void run() {
-        logger.fine("Build Start.");
         this.repository.init();
         Collection<AbstractPullrequest> targetPullRequests = this.repository.getTargetPullRequests();
         this.repository.addFutureBuildTasks(targetPullRequests);
     }
 
     public BitbucketPullRequestsBuilder setupBuilder() {
-        if (this.project == null || this.trigger == null) {
+        if (this.job == null || this.trigger == null) {
             throw new IllegalStateException();
         }
         this.repository = new BitbucketRepository(this.trigger.getProjectPath(), this);
@@ -49,18 +48,18 @@ public class BitbucketPullRequestsBuilder {
         return this;
     }
 
-    public void setProject(Job<?, ?> project) {
-        this.project = project;
+    public void setJob(Job<?, ?> job) {
+        this.job = job;
     }
 
     public void setTrigger(BitbucketBuildTrigger trigger) {
         this.trigger = trigger;
     }
 
-    public Job<?, ?> getProject() {
-        return this.project;
-    }        
-    
+    public Job<?, ?> getJob() {
+        return this.job;
+    }
+
     /**
      * Return MD5 hashed full project name or full project name, if MD5 hash provider inaccessible
      * @return unique project id
@@ -68,13 +67,13 @@ public class BitbucketPullRequestsBuilder {
     public String getProjectId() {
       try {
         final MessageDigest MD5 = MessageDigest.getInstance("MD5");
-        return new String(Hex.encodeHex(MD5.digest(this.project.getFullName().getBytes("UTF-8"))));
+        return new String(Hex.encodeHex(MD5.digest(this.job.getFullName().getBytes("UTF-8"))));
       } catch (NoSuchAlgorithmException exc) {
         logger.log(Level.WARNING, "Failed to produce hash", exc);
       } catch (UnsupportedEncodingException exc) {
         logger.log(Level.WARNING, "Failed to produce hash", exc);
       }
-      return this.project.getFullName();
+      return this.job.getFullName();
 
     }
 

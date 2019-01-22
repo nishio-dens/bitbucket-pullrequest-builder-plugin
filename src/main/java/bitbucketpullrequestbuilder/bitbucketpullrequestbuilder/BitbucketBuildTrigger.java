@@ -1,26 +1,6 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
-import antlr.ANTLRException;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
-import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
-import hudson.Extension;
-import hudson.model.*;
-import hudson.model.Queue;
-import hudson.model.queue.QueueTaskFuture;
-import hudson.plugins.git.RevisionParameterAction;
-import hudson.triggers.Trigger;
-import hudson.triggers.TriggerDescriptor;
-import hudson.util.ListBoxModel;
-import jenkins.model.Jenkins;
-import jenkins.model.ParameterizedJobMixIn;
-import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
-import org.eclipse.jgit.transport.URIish;
-import org.jenkinsci.Symbol;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.StaplerRequest;
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -28,18 +8,57 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+
+import org.apache.commons.lang.StringUtils;
+import org.eclipse.jgit.transport.URIish;
+import org.jenkinsci.Symbol;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.StaplerRequest;
+
+import antlr.ANTLRException;
+import hudson.Extension;
+import hudson.model.Cause;
+import hudson.model.CauseAction;
+import hudson.model.Executor;
+import hudson.model.Item;
+import hudson.model.Job;
+import hudson.model.ParameterDefinition;
+import hudson.model.ParameterValue;
+import hudson.model.ParametersAction;
+import hudson.model.ParametersDefinitionProperty;
+import hudson.model.Queue;
+import hudson.model.Result;
+import hudson.model.Run;
+import hudson.model.queue.QueueTaskFuture;
+import hudson.plugins.git.RevisionParameterAction;
+import hudson.security.ACL;
+import hudson.triggers.Trigger;
+import hudson.triggers.TriggerDescriptor;
+import hudson.util.ListBoxModel;
+import jenkins.model.Jenkins;
+import jenkins.model.ParameterizedJobMixIn;
+import net.sf.json.JSONObject;
 
 /**
  * Created by nishio
  */
 public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
     private static final Logger logger = Logger.getLogger(BitbucketBuildTrigger.class.getName());
+    private static final ExecutorService pool = Executors.newFixedThreadPool(5);
+
     private final String projectPath;
     private final String bitbucketServer;
     private final String cron;
@@ -165,6 +184,7 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
     public boolean getCancelOutdatedJobs() {
         return cancelOutdatedJobs;
     }
+
     /**
      * @return a phrase that when entered in a comment will trigger a new build
      */
@@ -173,36 +193,33 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
     }
 
     @Override
-    public void start(Job<?, ?> project, boolean newInstance) {
+    public void start(Job<?, ?> job, boolean newInstance) {
+        super.start(job, newInstance);
+
         try {
             this.bitbucketPullRequestsBuilder = BitbucketPullRequestsBuilder.getBuilder();
-            this.bitbucketPullRequestsBuilder.setProject(project);
+            this.bitbucketPullRequestsBuilder.setJob(job);
             this.bitbucketPullRequestsBuilder.setTrigger(this);
             this.bitbucketPullRequestsBuilder.setupBuilder();
-        } catch(IllegalStateException e) {
+        } catch(Exception e) {
             logger.log(Level.SEVERE, "Can't start trigger", e);
             return;
         }
-        super.start(project, newInstance);
     }
 
-    public static BitbucketBuildTrigger getTrigger(AbstractProject project) {
-        Trigger trigger = project.getTrigger(BitbucketBuildTrigger.class);
+    public static BitbucketBuildTrigger getTrigger(Job<?, ?> job) {
+        if (!(job instanceof ParameterizedJobMixIn.ParameterizedJob)) {
+            return null;
+        }
+
+        ParameterizedJobMixIn.ParameterizedJob pjob = (ParameterizedJobMixIn.ParameterizedJob) job;
+
+        Trigger<?> trigger = pjob.getTriggers().get(descriptor);
         return (BitbucketBuildTrigger)trigger;
     }
 
     public BitbucketPullRequestsBuilder getBuilder() {
         return this.bitbucketPullRequestsBuilder;
-    }
-
-    private ParameterizedJobMixIn retrieveScheduleJob(final Job<?, ?> job) {
-        // TODO 1.621+ use standard method
-        return new ParameterizedJobMixIn() {
-            @Override
-            protected Job asJob() {
-                return job;
-            }
-        };
     }
 
     public QueueTaskFuture<?> startJob(BitbucketCause cause) {
@@ -213,10 +230,19 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
             abortRunningJobsThatMatch(cause);
         }
 
-        return retrieveScheduleJob(this.job).scheduleBuild2(0,
-                new CauseAction(cause),
-                new ParametersAction(new ArrayList(values.values())),
-                new RevisionParameterAction(cause.getSourceCommitHash(), getBitbucketRepoUrl(cause.getRepositoryOwner(), cause.getRepositoryName())));
+        ParameterizedJobMixIn scheduledJob = new ParameterizedJobMixIn() {
+            @Override
+            protected Job asJob() {
+                return job;
+            }
+        };
+
+        return scheduledJob.scheduleBuild2(
+            this.getInstance().getQuietPeriod(),
+            new CauseAction(cause),
+            new ParametersAction(new ArrayList<ParameterValue>(values.values())),
+            new RevisionParameterAction(cause.getSourceCommitHash())
+        );
     }
 
     private URIish getBitbucketRepoUrl(String repoOwner, String repoName) {
@@ -252,7 +278,7 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
         logger.fine("Looking for running jobs that match PR ID: " + bitbucketCause.getPullRequestId());
         for (Object o : job.getBuilds()) {
             if (o instanceof Run) {
-                Run build = (Run) o;
+                Run<?,?> build = (Run<?,?>) o;
                 if (build.isBuilding() && hasCauseFromTheSamePullRequest(build.getCauses(), bitbucketCause)) {
                     logger.fine("Aborting build: " + build + " since PR is outdated");
                     setBuildDescription(build);
@@ -266,7 +292,7 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
         }
     }
 
-    private void setBuildDescription(final Run build) {
+    private void setBuildDescription(final Run<?,?> build) {
         try {
             build.setDescription("Aborting build by `Bitbucket Pullrequest Builder Plugin`: " + build + " since PR is outdated");
         } catch (IOException e) {
@@ -303,13 +329,17 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
 
     @Override
     public void run() {
-    	Job<?,?> project = this.getBuilder().getProject();
-    	if (project instanceof AbstractProject && ((AbstractProject)project).isDisabled()) {
-    		logger.fine("Build Skip.");
-    	} else {
-    		this.bitbucketPullRequestsBuilder.run();
+        Job<?,?> job = this.getBuilder().getJob();
+        String name = job.getFullName();
+
+        if (!job.isBuildable()) {
+            logger.log(Level.FINE, "Build Skip for job - {0}.", name);
+        } else {
+            logger.log(Level.FINE, "running trigger for the job - {0}", name);
+
+            pool.submit(new TriggerRunnable(this.getBuilder()));
             this.getDescriptor().save();
-    	}
+        }
     }
 
     @Override
@@ -346,9 +376,31 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
 
         public ListBoxModel doFillCredentialsIdItems() {
             return new StandardListBoxModel()
-                    .withEmptySelection()
-                    .withMatching(instanceOf(UsernamePasswordCredentials.class),
-                            CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class));
+                .withEmptySelection()
+                .withMatching(
+                    instanceOf(UsernamePasswordCredentials.class),
+                    CredentialsProvider.lookupCredentials(
+                        StandardUsernamePasswordCredentials.class,
+                        (Item) null,
+                        ACL.SYSTEM,
+                        (DomainRequirement) null
+                    )
+                );
+        }
+    }
+
+    private static final class TriggerRunnable implements Runnable {
+        private final BitbucketPullRequestsBuilder builder;
+
+        TriggerRunnable(BitbucketPullRequestsBuilder builder) {
+            this.builder = builder;
+        }
+
+        @Override
+        public void run() {
+            synchronized (this) {
+                this.builder.run();
+            }
         }
     }
 }

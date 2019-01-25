@@ -275,9 +275,11 @@ public class BitbucketRepository {
       List<AbstractPullrequest.Comment> filteredComments = new LinkedList<AbstractPullrequest.Comment>();
       for(AbstractPullrequest.Comment comment : comments) {
         String content = comment.getContent();
+        logger.log(Level.FINE, "Found comment: id:" + comment.getId() +" <" + comment.getContent() + ">");
         if (content == null || content.isEmpty()) continue;
         boolean isTTP = this.isTTPComment(content);
         boolean isTTPBuild = this.isTTPCommentBuildTags(content);
+        logger.log(Level.FINE, "isTTP: " + isTTP + " isTTPBuild: " + isTTPBuild);
         if (isTTP || isTTPBuild)  filteredComments.add(comment);
         if (isTTP) break;
       }
@@ -287,6 +289,9 @@ public class BitbucketRepository {
     private boolean isBuildTarget(AbstractPullrequest pullRequest) {
         if (pullRequest.getState() != null && pullRequest.getState().equals("OPEN")) {
             if (isSkipBuild(pullRequest.getTitle()) || !isFilteredBuild(pullRequest)) {
+                logger.log(Level.FINE, "Skipping build for " + pullRequest.getTitle() + 
+                        ": skip:" + isSkipBuild(pullRequest.getTitle()) + " : isFilteredBuild: " + 
+                        isFilteredBuild(pullRequest));
                 return false;
             }
 

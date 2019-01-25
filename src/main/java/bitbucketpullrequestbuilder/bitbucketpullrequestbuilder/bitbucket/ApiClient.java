@@ -10,6 +10,7 @@ import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.util.EncodingUtil;
 import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion;
 import org.codehaus.jackson.type.JavaType;
 import org.codehaus.jackson.type.TypeReference;
 
@@ -133,11 +134,21 @@ public abstract class ApiClient {
         return send(req);
     }
 
+    // Public static JSON serializer, so we can test serialization
+    public static String serializeObject(Object obj) throws java.io.IOException {
+        String jsonStr = new ObjectMapper().
+            setSerializationInclusion(Inclusion.NON_NULL).
+            writeValueAsString(obj);
+        return jsonStr;
+    }
+
     protected String post(String path, Object data) {
         try {
-            final StringRequestEntity entity = new StringRequestEntity(new ObjectMapper().writeValueAsString(data), "application/json", "utf-8");
+            final String jsonStr = ApiClient.serializeObject(data);
+            final StringRequestEntity entity = new StringRequestEntity(jsonStr, "application/json", "utf-8");
             PostMethod req = new PostMethod(path);
             req.setRequestEntity(entity);
+            logger.log(Level.FINE, "SENDING:\n" + jsonStr + "\n");
             return send(req);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Not able to parse data to json", e);
@@ -169,12 +180,20 @@ public abstract class ApiClient {
         try {
             int statusCode = client.executeMethod(req);
             if (statusCode == HttpStatus.SC_NO_CONTENT) {
+                // Empty
                 return null;
-            } else if (statusCode != HttpStatus.SC_OK) {
+
+            // Not sure if We should list the success codes, or check for < 200 and > 207 . . .
+            // I kind of prefer listing the ones we expect.
+            } else if (statusCode == HttpStatus.SC_OK || statusCode == HttpStatus.SC_ACCEPTED ||
+                       statusCode == HttpStatus.SC_CREATED) {
+                // Success!
+                return IOUtils.toString(req.getResponseBodyAsStream());
+
+            } else {
+                // Bad response status
                 logger.log(Level.WARNING, "Response status: " + req.getStatusLine()+" URI: "+req.getURI());
                 logger.log(Level.WARNING, IOUtils.toString(req.getResponseBodyAsStream()));
-            } else {
-                return IOUtils.toString(req.getResponseBodyAsStream());
             }
         } catch (HttpException e) {
             logger.log(Level.WARNING, "Failed to send request.", e);

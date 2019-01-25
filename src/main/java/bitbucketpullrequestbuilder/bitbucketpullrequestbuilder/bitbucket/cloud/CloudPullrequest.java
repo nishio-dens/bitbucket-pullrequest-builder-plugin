@@ -165,12 +165,27 @@ public class CloudPullrequest extends AbstractPullrequest {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Comment implements AbstractPullrequest.Comment {
         private Integer id;
-        private String content;
+        private Content content;
 
-        public Comment() {}
+        public Comment() {
+        }
 
         public Comment(String rawContent) {
-            this.content = rawContent;
+            this.content = new Content();
+            this.content.setRaw(rawContent);
+        }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public static class Content {
+            private String raw;
+
+            public String getRaw() {
+                return raw;
+            }
+
+            public void setRaw(String rawContent) {
+                this.raw = rawContent;
+            }
         }
 
         @Override
@@ -209,11 +224,27 @@ public class CloudPullrequest extends AbstractPullrequest {
             this.id = id;
         }
 
+        // This annotation prevents getContent() - the abstract method, from being used in json
+        // serialization/deserialization
+        @JsonIgnore
         public String getContent() {
+            if (content == null) {
+                return "";
+            }
+            return content.getRaw();
+        }
+
+        // This annotation is needed so that the serializer will use the actual content
+        // for serialization, even though the abstract class assumes getContent() will return a string.
+        @JsonProperty("content")
+        public Content getContentRaw() {
             return content;
         }
 
-        public void setContent(String content) {
+        // And, since the getContent didn't get grabbed by default due to my @JsonIgnore, we need to 
+        // tell it setContent is still ok to use.
+        @JsonProperty("content")
+        public void setContent(Content content) {
             this.content = content;
         }
     }

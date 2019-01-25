@@ -31,7 +31,21 @@ public class CloudApiClient extends ApiClient {
 
     @Override
     public List<AbstractPullrequest.Comment> getPullRequestComments(String commentOwnerName, String commentRepositoryName, String pullRequestId) {
-        return getAllValues(v2("/pullrequests/" + pullRequestId + "/comments"), 100, AbstractPullrequest.Comment.class);
+
+        final List<CloudPullrequest.Comment> comments = getAllValues(v2("/pullrequests/" + pullRequestId + "/comments"), 100, CloudPullrequest.Comment.class);
+        return cloudToAbstractComments(comments);
+    }
+
+    private List<AbstractPullrequest.Comment> cloudToAbstractComments(List<CloudPullrequest.Comment> comments) {
+        // There has got to be a better way to do this?
+        // Sorry - my java OO-fu is weak.
+
+        final List<AbstractPullrequest.Comment> resultComments = new ArrayList<>();
+        for (final CloudPullrequest.Comment comment : comments) {
+            resultComments.add(comment);
+        }
+
+        return resultComments;
     }
 
     @Override
@@ -67,7 +81,7 @@ public class CloudApiClient extends ApiClient {
     public AbstractPullrequest.Participant postPullRequestApproval(String pullRequestId) {
         try {
             return parse(post(v2("/pullrequests/" + pullRequestId + "/approve"),
-                new NameValuePair[]{}), AbstractPullrequest.Participant.class);
+                new NameValuePair[]{}), CloudPullrequest.Participant.class);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Invalid pull request approval response.", e);
         }
@@ -76,12 +90,11 @@ public class CloudApiClient extends ApiClient {
 
     @Override
     public AbstractPullrequest.Comment postPullRequestComment(String pullRequestId, String content) {
-        NameValuePair[] data = new NameValuePair[] {
-            new NameValuePair("content", content),
-        };
+        CloudPullrequest.Comment data = new CloudPullrequest.Comment(content);
         try {
             String response = post(v2("/pullrequests/" + pullRequestId + "/comments"), data);
-            return parse(response, new TypeReference<AbstractPullrequest.Comment>() {});
+            logger.log(Level.FINE, "postCommentResponse: " + response);
+            return parse(response, new TypeReference<CloudPullrequest.Comment>() {});
         } catch(Exception e) {
             logger.log(Level.WARNING, "Invalid pull request comment response.", e);
         }
@@ -102,7 +115,9 @@ public class CloudApiClient extends ApiClient {
             String url = rootUrl + "?pagelen=" + pageLen;
             do {
                 final JavaType type = TypeFactory.defaultInstance().constructParametricType(AbstractPullrequest.Response.class, cls);
-                AbstractPullrequest.Response<T> response = parse(get(url), type);
+                final String body = get(url);
+                logger.log(Level.FINE, "****Received****:\n" + body + "\n");
+                AbstractPullrequest.Response<T> response = parse(body, type);
                 values.addAll(response.getValues());
                 url = response.getNext();
             } while (url != null);

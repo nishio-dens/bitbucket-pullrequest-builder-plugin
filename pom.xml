@@ -8,7 +8,7 @@
 
   <artifactId>bitbucket-pullrequest-builder</artifactId>
   <name>Bitbucket Pullrequest Builder Plugin</name>
-  <version>1.5.0-SNAPSHOT</version>
+  <version>1.4.29</version>
   <description>This Jenkins plugin builds pull requests from Bitbucket.org and will report the test results.</description>
   <packaging>hpi</packaging>
   <url>https://wiki.jenkins-ci.org/display/JENKINS/Bitbucket+pullrequest+builder+plugin</url>    
@@ -17,7 +17,7 @@
     <connection>scm:git:ssh://git@github.com/jenkinsci/bitbucket-pullrequest-builder-plugin.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/jenkinsci/bitbucket-pullrequest-builder-plugin.git</developerConnection>
     <url>https://github.com/jenkinsci/bitbucket-pullrequest-builder-plugin.git</url>
-    <tag>HEAD</tag>
+    <tag>bitbucket-pullrequest-builder-1.4.29</tag>
   </scm>
   <developers>
     <developer>

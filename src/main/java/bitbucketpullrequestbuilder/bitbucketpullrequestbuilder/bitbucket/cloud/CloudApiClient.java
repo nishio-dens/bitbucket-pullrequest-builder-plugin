@@ -18,7 +18,6 @@ public class CloudApiClient extends ApiClient {
 
     private static final Logger logger = Logger.getLogger(CloudApiClient.class.getName());
 
-    private static final String V1_API_BASE_URL = "https://bitbucket.org/api/1.0/repositories/";
     private static final String V2_API_BASE_URL = "https://bitbucket.org/api/2.0/repositories/";
 
     public <T extends HttpClientFactory> CloudApiClient(String username, String password, String owner, String repositoryName, String key, String name, T httpFactory) {
@@ -32,7 +31,21 @@ public class CloudApiClient extends ApiClient {
 
     @Override
     public List<AbstractPullrequest.Comment> getPullRequestComments(String commentOwnerName, String commentRepositoryName, String pullRequestId) {
-        return getAllValues(v2("/pullrequests/" + pullRequestId + "/comments"), 100, AbstractPullrequest.Comment.class);
+
+        final List<CloudPullrequest.Comment> comments = getAllValues(v2("/pullrequests/" + pullRequestId + "/comments"), 100, CloudPullrequest.Comment.class);
+        return cloudToAbstractComments(comments);
+    }
+
+    private List<AbstractPullrequest.Comment> cloudToAbstractComments(List<CloudPullrequest.Comment> comments) {
+        // There has got to be a better way to do this?
+        // Sorry - my java OO-fu is weak.
+
+        final List<AbstractPullrequest.Comment> resultComments = new ArrayList<>();
+        for (final CloudPullrequest.Comment comment : comments) {
+            resultComments.add(comment);
+        }
+
+        return resultComments;
     }
 
     @Override
@@ -54,21 +67,21 @@ public class CloudApiClient extends ApiClient {
     }
 
     public void deletePullRequestComment(String pullRequestId, String commentId) {
-        delete(v1("/pullrequests/" + pullRequestId + "/comments/" + commentId));
+        delete(v2("/pullrequests/" + pullRequestId + "/comments/" + commentId));
     }
 
     public void updatePullRequestComment(String pullRequestId, String content, String commentId) {
         NameValuePair[] data = new NameValuePair[] {
             new NameValuePair("content", content),
         };
-        put(v1("/pullrequests/" + pullRequestId + "/comments/" + commentId), data);
+        put(v2("/pullrequests/" + pullRequestId + "/comments/" + commentId), data);
     }
 
     @Override
     public AbstractPullrequest.Participant postPullRequestApproval(String pullRequestId) {
         try {
             return parse(post(v2("/pullrequests/" + pullRequestId + "/approve"),
-                new NameValuePair[]{}), AbstractPullrequest.Participant.class);
+                new NameValuePair[]{}), CloudPullrequest.Participant.class);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Invalid pull request approval response.", e);
         }
@@ -77,19 +90,15 @@ public class CloudApiClient extends ApiClient {
 
     @Override
     public AbstractPullrequest.Comment postPullRequestComment(String pullRequestId, String content) {
-        NameValuePair[] data = new NameValuePair[] {
-            new NameValuePair("content", content),
-        };
+        CloudPullrequest.Comment data = new CloudPullrequest.Comment(content);
         try {
-            return parse(post(v1("/pullrequests/" + pullRequestId + "/comments"), data), new TypeReference<AbstractPullrequest.Comment>() {});
+            String response = post(v2("/pullrequests/" + pullRequestId + "/comments"), data);
+            logger.log(Level.FINE, "postCommentResponse: " + response);
+            return parse(response, new TypeReference<CloudPullrequest.Comment>() {});
         } catch(Exception e) {
             logger.log(Level.WARNING, "Invalid pull request comment response.", e);
         }
         return null;
-    }
-
-    private String v1(String url) {
-        return V1_API_BASE_URL + this.owner + "/" + this.repositoryName + url;
     }
 
     private String v2(String path) {
@@ -106,7 +115,9 @@ public class CloudApiClient extends ApiClient {
             String url = rootUrl + "?pagelen=" + pageLen;
             do {
                 final JavaType type = TypeFactory.defaultInstance().constructParametricType(AbstractPullrequest.Response.class, cls);
-                AbstractPullrequest.Response<T> response = parse(get(url), type);
+                final String body = get(url);
+                logger.log(Level.FINE, "****Received****:\n" + body + "\n");
+                AbstractPullrequest.Response<T> response = parse(body, type);
                 values.addAll(response.getValues());
                 url = response.getNext();
             } while (url != null);

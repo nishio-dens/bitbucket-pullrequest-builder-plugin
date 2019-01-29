@@ -1,0 +1,2 @@
+// For Jenkinsci build
+buildPlugin()

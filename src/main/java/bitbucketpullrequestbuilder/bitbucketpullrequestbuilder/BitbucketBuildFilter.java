@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
+
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudBitbucketCause;
 import jenkins.plugins.git.AbstractGitSCMSource;
 import jenkins.scm.api.SCMSource;
 
@@ -41,7 +43,7 @@ abstract class Filter {
   static final Pattern RX_AUTHOR_PARTS = Pattern.compile("(a:)");
   public static boolean HasAuthorPartsPredicate(String filter) { return RX_AUTHOR_PARTS.matcher(filter).find(); }
   
-  protected boolean applyByRx(Pattern rx, Filter usedFilter, String filter, BitbucketCause cause) {    
+  protected boolean applyByRx(Pattern rx, Filter usedFilter, String filter, BitbucketCause cause) {
     Matcher srcMatch = rx.matcher(filter);
     boolean apply = false;
     while (srcMatch.find()) {
@@ -69,7 +71,7 @@ class AnyFlag extends Filter {
 
 class OnlySourceFlag extends Filter {  
   @Override
-  public boolean apply(String filter, BitbucketCause cause) { 
+  public boolean apply(String filter, BitbucketCause cause) {
     String selectedRx = filter.startsWith(RX_FILTER_FLAG_SINGLE) ? filter.substring(RX_FILTER_FLAG_SINGLE.length()) : Pattern.quote(filter);    
     logger.log(Level.FINE, "OnlySourceFlag using filter: {0}", selectedRx);
     Matcher matcher = Pattern.compile(selectedRx, Pattern.CASE_INSENSITIVE).matcher(cause.getSourceBranch());
@@ -83,7 +85,7 @@ class OnlySourceFlag extends Filter {
 
 class OnlyDestFlag extends Filter {  
   @Override
-  public boolean apply(String filter, BitbucketCause cause) { 
+  public boolean apply(String filter, BitbucketCause cause) {
     String selectedRx = filter.startsWith(RX_FILTER_FLAG_SINGLE) ? filter.substring(RX_FILTER_FLAG_SINGLE.length()) : Pattern.quote(filter);
     logger.log(Level.FINE, "OnlyDestFlag using filter: {0}", selectedRx);
     Matcher matcher = Pattern.compile(selectedRx, Pattern.CASE_INSENSITIVE).matcher(cause.getTargetBranch());
@@ -100,7 +102,7 @@ class SourceDestFlag extends Filter {
   static final Pattern DST_MATCHER_RX = Pattern.compile(DST_RX + BRANCH_FILTER_RX_PART, Pattern.CASE_INSENSITIVE | Pattern.CANON_EQ);
   
   @Override
-  public boolean apply(String filter, BitbucketCause cause) { 
+  public boolean apply(String filter, BitbucketCause cause) {
     return this.applyByRx(SRC_MATCHER_RX, new OnlySourceFlag(), filter, cause) &&
            this.applyByRx(DST_MATCHER_RX, new OnlyDestFlag(), filter, cause);
   } 
@@ -115,7 +117,7 @@ class AuthorFlag extends Filter {
   
   static class AuthorFlagImpl extends Filter {
     @Override
-    public boolean apply(String filter, BitbucketCause cause) { 
+    public boolean apply(String filter, BitbucketCause cause) {
       String selectedRx = filter.startsWith(RX_FILTER_FLAG_SINGLE) ? filter.substring(RX_FILTER_FLAG_SINGLE.length()) : Pattern.quote(filter);
       logger.log(Level.FINE, "AuthorFlagImpl using filter: {0}", selectedRx);
       Matcher matcher = Pattern.compile(selectedRx, Pattern.CASE_INSENSITIVE).matcher(cause.getPullRequestAuthor());
@@ -126,7 +128,7 @@ class AuthorFlag extends Filter {
   }
   
   @Override
-  public boolean apply(String filter, BitbucketCause cause) { 
+  public boolean apply(String filter, BitbucketCause cause) {
     return this.applyByRx(AUTHOR_MATCHER_RX, new AuthorFlagImpl(), filter, cause);
   } 
   @Override
@@ -142,7 +144,7 @@ class CombinedFlags extends Filter {
   }
   
   @Override
-  public boolean apply(String filter, BitbucketCause cause) { 
+  public boolean apply(String filter, BitbucketCause cause) {
     boolean applied = true;
     for(Filter f: _filters)
       if (f.check(filter)) 
@@ -198,7 +200,7 @@ public class BitbucketBuildFilter {
     }  
   }
   
-  public boolean approved(BitbucketCause cause) {    
+  public boolean approved(BitbucketCause cause) {
     logger.log(Level.FINE, "Approve cause: {0}", cause.toString());
     return this.currFilter.apply(this.filter, cause);
   }  

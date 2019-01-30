@@ -3,6 +3,12 @@ Bitbucket Pull Request Builder Plugin
 
 This Jenkins plugin builds pull requests from Bitbucket.org and will report the test results.
 
+### Current Maintainer(s):
+
+- [David Frascone](https://github.com/CodeMonk)
+
+### Build Status
+
 [![Build Status](https://travis-ci.org/nishio-dens/bitbucket-pullrequest-builder-plugin.svg?branch=master)](https://travis-ci.org/nishio-dens/bitbucket-pullrequest-builder-plugin)
 
 
@@ -130,7 +136,7 @@ Thank you!
 Copyright
 ---------
 
-Copyright © 2014 S.nishio + Martin Damovsky
+Copyright © 2018 S.nishio + Martin Damovsky + David Frascone
 
 
 License

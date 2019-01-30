@@ -1,7 +1,6 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
 import hudson.Extension;
-import hudson.model.AbstractBuild;
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.TaskListener;
@@ -20,7 +19,7 @@ public class BitbucketBuildListener extends RunListener<Run<?, ?>> {
     private static final Logger logger = Logger.getLogger(BitbucketBuildListener.class.getName());
 
     @Override
-    public void onStarted(Run r, TaskListener listener) {
+    public void onStarted(Run<?,?> r, TaskListener listener) {
         logger.fine("BitbucketBuildListener onStarted called.");
         BitbucketBuilds builds = builds(r);
         if (builds != null) {
@@ -29,7 +28,7 @@ public class BitbucketBuildListener extends RunListener<Run<?, ?>> {
     }
 
     @Override
-    public void onCompleted(Run r, @Nonnull TaskListener listener) {
+    public void onCompleted(Run<?,?> r, @Nonnull TaskListener listener) {
         logger.fine("BitbucketBuildListener onCompleted called.");
         BitbucketBuilds builds = builds(r);
         if (builds != null) {
@@ -39,20 +38,16 @@ public class BitbucketBuildListener extends RunListener<Run<?, ?>> {
 
     private BitbucketBuilds builds(Run<?, ?> r) {
         BitbucketBuildTrigger trigger = null;
-        if (r instanceof AbstractBuild) {
-            trigger = BitbucketBuildTrigger.getTrigger(((AbstractBuild) r).getProject());
-        } else {
-            Job job = r.getParent();
-            if (job instanceof ParameterizedJobMixIn.ParameterizedJob) {
 
-                for (Trigger<?> t : ((ParameterizedJobMixIn.ParameterizedJob) job).getTriggers().values()) {
-                    if (t instanceof BitbucketBuildTrigger) {
-                        trigger = (BitbucketBuildTrigger) t;
-                    }
+        Job<?,?> job = r.getParent();
+        if (job instanceof ParameterizedJobMixIn.ParameterizedJob) {
+            for (Trigger<?> t : ((ParameterizedJobMixIn.ParameterizedJob) job).getTriggers().values()) {
+                if (t instanceof BitbucketBuildTrigger) {
+                    trigger = (BitbucketBuildTrigger) t;
                 }
             }
         }
+
         return trigger == null ? null : trigger.getBuilder().getBuilds();
     }
-
 }

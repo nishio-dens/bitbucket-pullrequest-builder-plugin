@@ -52,13 +52,28 @@ public class CloudApiClient extends ApiClient {
     public boolean hasBuildStatus(String owner, String repositoryName, String revision, String keyEx) {
         String url = v2(owner, repositoryName, "/commit/" + revision + "/statuses/build/" + computeAPIKey(keyEx));
         String reqBody = get(url);
+        logger.log(Level.FINE, "hasBuildStatus response: " + reqBody);
         return reqBody != null && reqBody.contains("\"state\"");
     }
 
     @Override
     public void setBuildStatus(String owner, String repositoryName, String revision, BuildState state, String buildUrl, String comment, String keyEx) {
         String url = v2(owner, repositoryName, "/commit/" + revision + "/statuses/build");
-        setBuildStatus(state, buildUrl, comment, keyEx, url);
+        String computedKey = this.computeAPIKey(keyEx);
+
+        NameValuePair[] data = new NameValuePair[]{
+                new NameValuePair("description", comment),
+                new NameValuePair("key", computedKey),
+                new NameValuePair("name", this.name),
+                new NameValuePair("state", state.toString()),
+                new NameValuePair("url", buildUrl),
+        };
+
+        String resp = post(url, data);
+
+        logger.log(Level.FINE, "POST state {0} to {1} with key {2} with response {3}", new Object[]{
+          state, url, computedKey, resp}
+        );
     }
 
     @Override

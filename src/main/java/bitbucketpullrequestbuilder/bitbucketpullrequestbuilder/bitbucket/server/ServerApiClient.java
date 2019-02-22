@@ -64,7 +64,21 @@ public class ServerApiClient extends ApiClient {
 
     @Override
     public void setBuildStatus(String owner, String repositoryName, String revision, BuildState state, String buildUrl, String comment, String keyEx) {
-        setBuildStatus(state, buildUrl, comment, keyEx, buildStateV1(revision));
+        String url = buildStateV1(revision);
+        String computedKey = computeAPIKey(keyEx);
+        ServerPullrequest.CommitBuildState commit = new ServerPullrequest.CommitBuildState();
+
+        // FIXME TODO WTF? Where do you put the comment?
+
+        commit.setKey(computedKey);
+        commit.setState(state);
+        commit.setUrl(buildUrl);
+
+        String resp = post(url, commit);
+
+        logger.log(Level.FINE, "POST state {0} to {1} with key {2} with response {3}", new Object[]{
+            state, url, computedKey, resp}
+        );
     }
 
     @Override

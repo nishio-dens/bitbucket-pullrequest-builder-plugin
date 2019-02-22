@@ -1,6 +1,5 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket;
 
-import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.server.ServerPullrequest;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
@@ -213,18 +212,6 @@ public abstract class ApiClient {
     }
     protected <R> R parse(String response, TypeReference<R> ref) throws IOException {
         return new ObjectMapper().readValue(response, ref);
-    }
-
-    protected void setBuildStatus(BuildState state, String buildUrl, String comment, String keyEx, String url) {
-        String computedKey = computeAPIKey(keyEx);
-        ServerPullrequest.CommitBuildState commit = new ServerPullrequest.CommitBuildState();
-        commit.setKey(computedKey);
-        commit.setState(state);
-        commit.setUrl(buildUrl);
-
-        logger.log(Level.FINE, "POST state {0} to {1} with key {2} with response {3}", new Object[]{
-            state, url, computedKey, post(url, commit)}
-        );
     }
 
     public abstract <T extends AbstractPullrequest> List<T> getPullRequests();

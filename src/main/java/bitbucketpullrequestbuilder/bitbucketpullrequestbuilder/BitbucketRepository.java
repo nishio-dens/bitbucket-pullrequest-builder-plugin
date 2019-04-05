@@ -154,6 +154,14 @@ public class BitbucketRepository {
             destinationCommitHash = pullRequest.getDestination().getCommit().getHash();
         }
 
+        final List<AbstractPullrequest.RepositoryLink> cloneLinks = pullRequest.getSource().getRepository().getLinks().getClone();
+        String sshRepoUri = null;
+        for (AbstractPullrequest.RepositoryLink cloneLink : cloneLinks) {
+            if ( "ssh".equals(cloneLink.getName()) ) {
+                sshRepoUri = cloneLink.getHref();
+            }
+        }
+
         final BitbucketCause cause;
         if (this.trigger.isCloud()) {
             cause = new CloudBitbucketCause(
@@ -161,12 +169,13 @@ public class BitbucketRepository {
                 pullRequest.getDestination().getBranch().getName(),
                 pullRequest.getSource().getRepository().getOwnerName(),
                 pullRequest.getSource().getRepository().getRepositoryName(),
+                sshRepoUri,
                 pullRequest.getId(),
                 pullRequest.getDestination().getRepository().getOwnerName(),
                 pullRequest.getDestination().getRepository().getRepositoryName(),
                 pullRequest.getTitle(),
                 pullRequest.getSource().getCommit().getHash(),
-                    destinationCommitHash,
+                destinationCommitHash,
                 pullRequest.getAuthor().getCombinedUsername()
             );
         } else {
@@ -176,6 +185,7 @@ public class BitbucketRepository {
                 pullRequest.getDestination().getBranch().getName(),
                 pullRequest.getSource().getRepository().getOwnerName(),
                 pullRequest.getSource().getRepository().getRepositoryName(),
+                sshRepoUri,
                 pullRequest.getId(),
                 pullRequest.getDestination().getRepository().getOwnerName(),
                 pullRequest.getDestination().getRepository().getRepositoryName(),

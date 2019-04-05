@@ -23,7 +23,6 @@ import java.util.logging.Logger;
 
 import jenkins.model.Jenkins;
 import hudson.ProxyConfiguration;
-import jenkins.model.Jenkins;
 
 /**
  * Created by nishio

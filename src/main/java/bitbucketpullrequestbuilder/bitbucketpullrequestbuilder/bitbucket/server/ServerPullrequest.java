@@ -98,6 +98,7 @@ public class ServerPullrequest extends AbstractPullrequest {
         private String name;
         private String slug;
         private String ownerName;
+        private RepositoryLinks links;
 
         @JsonProperty("project")
         private void unpackProject(Map<String, Object> project) {
@@ -110,6 +111,10 @@ public class ServerPullrequest extends AbstractPullrequest {
 
         public void setSlug(String slug) {
             this.slug = slug;
+        }
+
+        public void setLinks(RepositoryLinks links) {
+            this.links = links;
         }
 
         @Override
@@ -125,6 +130,11 @@ public class ServerPullrequest extends AbstractPullrequest {
         @Override
         public String getRepositoryName() {
             return slug;
+        }
+
+        @Override
+        public RepositoryLinks getLinks() {
+            return links;
         }
     }
 

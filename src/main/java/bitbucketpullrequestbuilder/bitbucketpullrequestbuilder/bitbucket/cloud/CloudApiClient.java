@@ -4,13 +4,16 @@ import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Abstrac
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BuildState;
 import org.apache.commons.httpclient.NameValuePair;
+import org.codehaus.jackson.map.type.MapType;
 import org.codehaus.jackson.map.type.TypeFactory;
 import org.codehaus.jackson.type.JavaType;
 import org.codehaus.jackson.type.TypeReference;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,7 +29,22 @@ public class CloudApiClient extends ApiClient {
 
     @Override
     public List<CloudPullrequest> getPullRequests() {
-        return getAllValues(v2("/pullrequests/"), 50, CloudPullrequest.class);
+        final List<CloudPullrequest> pullrequests = getAllValues(v2("/pullrequests/"), 50, CloudPullrequest.class);
+        return addRepositoryUris(pullrequests);
+    }
+
+    private List<CloudPullrequest> addRepositoryUris(List<CloudPullrequest> pullrequests) {
+        final AbstractPullrequest.RepositoryLinks repositoryLinks = getRepositoryLinks();
+        if (repositoryLinks != null) {
+            for (CloudPullrequest pullrequest : pullrequests) {
+                final CloudPullrequest.Repository sourceRepository = pullrequest.getSource().getRepository();
+                final AbstractPullrequest.RepositoryLinks links = sourceRepository.getLinks();
+                if(links.getClone().isEmpty()) {
+                    sourceRepository.setLinks(repositoryLinks);
+                }
+            }
+        }
+        return pullrequests;
     }
 
     @Override
@@ -34,6 +52,26 @@ public class CloudApiClient extends ApiClient {
 
         final List<CloudPullrequest.Comment> comments = getAllValues(v2("/pullrequests/" + pullRequestId + "/comments"), 100, CloudPullrequest.Comment.class);
         return cloudToAbstractComments(comments);
+    }
+
+    public AbstractPullrequest.RepositoryLinks getRepositoryLinks() {
+        final String url = v2("/?fields=links");
+        final String body = get(url);
+        logger.log(Level.FINE, "****Received("+url+")****:\n" + body + "\n");
+        AbstractPullrequest.RepositoryLinks ret = null;
+        try {
+            final TypeFactory typeFactory = TypeFactory.defaultInstance();
+            final MapType responseType = typeFactory.constructMapType(
+                    HashMap.class,
+                    String.class,
+                    AbstractPullrequest.RepositoryLinks.class
+            );
+            final Map<String, AbstractPullrequest.RepositoryLinks> map = parse(body, responseType);
+            ret = map.get("links");
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "invalid response.", e);
+        }
+        return ret;
     }
 
     private List<AbstractPullrequest.Comment> cloudToAbstractComments(List<CloudPullrequest.Comment> comments) {
@@ -131,7 +169,7 @@ public class CloudApiClient extends ApiClient {
             do {
                 final JavaType type = TypeFactory.defaultInstance().constructParametricType(AbstractPullrequest.Response.class, cls);
                 final String body = get(url);
-                logger.log(Level.FINE, "****Received****:\n" + body + "\n");
+                logger.log(Level.FINE, "****Received("+url+")****:\n" + body + "\n");
                 AbstractPullrequest.Response<T> response = parse(body, type);
                 values.addAll(response.getValues());
                 url = response.getNext();

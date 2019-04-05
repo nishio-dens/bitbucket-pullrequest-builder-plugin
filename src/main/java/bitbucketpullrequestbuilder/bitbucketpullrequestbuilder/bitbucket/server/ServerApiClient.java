@@ -6,10 +6,8 @@ import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BuildSt
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudApiClient;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.cloud.CloudPullrequest;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.httpclient.NameValuePair;
 import org.codehaus.jackson.map.type.TypeFactory;
 import org.codehaus.jackson.type.JavaType;
-import org.codehaus.jackson.type.TypeReference;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,7 +32,38 @@ public class ServerApiClient extends ApiClient {
 
     @Override
     public List<ServerPullrequest> getPullRequests() {
-        return getAllValues(restV1(PULL_REQUESTS_URL), ServerPullrequest.class);
+        final List<ServerPullrequest> pullrequests = getAllValues(restV1(PULL_REQUESTS_URL), ServerPullrequest.class);
+        return addRepositoryUrls(pullrequests);
+    }
+
+    private List<ServerPullrequest> addRepositoryUrls(List<ServerPullrequest> pullrequests) {
+        final AbstractPullrequest.RepositoryLinks repositoryLinks = getRepositoryLinks();
+        if (repositoryLinks != null) {
+            for (ServerPullrequest pullrequest : pullrequests) {
+                final ServerPullrequest.Repository sourceRepository = pullrequest.getSource().getRepository();
+                final AbstractPullrequest.RepositoryLinks links = sourceRepository.getLinks();
+                if(links.getClone().isEmpty()) {
+                    sourceRepository.setLinks(repositoryLinks);
+                }
+            }
+        }
+        return pullrequests;
+    }
+
+    public AbstractPullrequest.RepositoryLinks getRepositoryLinks() {
+        final String body = get(restV1(""));
+        AbstractPullrequest.RepositoryLinks ret = null;
+        try {
+            final TypeFactory typeFactory = TypeFactory.defaultInstance();
+            final ServerPullrequest.Repository repository = parse(
+                    body,
+                    typeFactory.constructType(ServerPullrequest.Repository.class)
+            );
+            ret = repository.getLinks();
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "invalid response.", e);
+        }
+        return ret;
     }
 
     @Override

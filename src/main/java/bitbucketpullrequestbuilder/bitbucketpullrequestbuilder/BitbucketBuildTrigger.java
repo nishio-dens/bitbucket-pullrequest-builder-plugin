@@ -237,11 +237,18 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
             }
         };
 
+        URIish repoUri;
+        try {
+            repoUri = new URIish(cause.getRepositoryUri());
+        } catch (URISyntaxException e) {
+            repoUri = null;
+        }
+
         return scheduledJob.scheduleBuild2(
             this.getInstance().getQuietPeriod(),
             new CauseAction(cause),
             new ParametersAction(new ArrayList<ParameterValue>(values.values())),
-            new RevisionParameterAction(cause.getSourceCommitHash())
+            new RevisionParameterAction(cause.getSourceCommitHash(), repoUri)
         );
     }
 

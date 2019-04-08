@@ -260,7 +260,7 @@ public class BitbucketRepository {
         if(trigger != null && StringUtils.isNotBlank(trigger.getCommentTrigger())) {
             commentTrigger = trigger.getCommentTrigger();
         }
-      return content.toLowerCase().contains(commentTrigger);
+      return content.contains(commentTrigger);
     }
 
     private boolean isTTPCommentBuildTags(String content) {

@@ -237,11 +237,16 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
             }
         };
 
-        URIish repoUri;
+        URIish repoUri = null;
         try {
-            repoUri = new URIish(cause.getRepositoryUri());
+            final String repositoryUri = cause.getRepositoryUri();
+            if (repositoryUri != null) {
+                repoUri = new URIish(repositoryUri);
+            } else {
+                logger.fine("No repository URI specified");
+            }
         } catch (URISyntaxException e) {
-            repoUri = null;
+            logger.log(Level.FINE, "Repository URI error: {0}", e.getMessage());
         }
 
         return scheduledJob.scheduleBuild2(

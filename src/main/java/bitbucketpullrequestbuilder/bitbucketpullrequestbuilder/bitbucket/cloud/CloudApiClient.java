@@ -4,16 +4,15 @@ import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Abstrac
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.ApiClient;
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.BuildState;
 import org.apache.commons.httpclient.NameValuePair;
-import org.codehaus.jackson.map.type.MapType;
 import org.codehaus.jackson.map.type.TypeFactory;
 import org.codehaus.jackson.type.JavaType;
 import org.codehaus.jackson.type.TypeReference;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,49 +28,19 @@ public class CloudApiClient extends ApiClient {
 
     @Override
     public List<CloudPullrequest> getPullRequests() {
-        final List<CloudPullrequest> pullrequests = getAllValues(v2("/pullrequests/"), 50, CloudPullrequest.class);
-        return addRepositoryUris(pullrequests);
-    }
-
-    private List<CloudPullrequest> addRepositoryUris(List<CloudPullrequest> pullrequests) {
-        final AbstractPullrequest.RepositoryLinks repositoryLinks = getRepositoryLinks();
-        if (repositoryLinks != null) {
-            for (CloudPullrequest pullrequest : pullrequests) {
-                final CloudPullrequest.Repository sourceRepository = pullrequest.getSource().getRepository();
-                final AbstractPullrequest.RepositoryLinks links = sourceRepository.getLinks();
-                if(links.getClone().isEmpty()) {
-                    sourceRepository.setLinks(repositoryLinks);
-                }
-            }
-        }
-        return pullrequests;
+        return getAllValues(
+                v2("/pullrequests/"),
+                50,
+                "+values.source.repository.links.clone.*",
+                CloudPullrequest.class
+        );
     }
 
     @Override
     public List<AbstractPullrequest.Comment> getPullRequestComments(String commentOwnerName, String commentRepositoryName, String pullRequestId) {
 
-        final List<CloudPullrequest.Comment> comments = getAllValues(v2("/pullrequests/" + pullRequestId + "/comments"), 100, CloudPullrequest.Comment.class);
+        final List<CloudPullrequest.Comment> comments = getAllValues(v2("/pullrequests/" + pullRequestId + "/comments"), 100, null, CloudPullrequest.Comment.class);
         return cloudToAbstractComments(comments);
-    }
-
-    public AbstractPullrequest.RepositoryLinks getRepositoryLinks() {
-        final String url = v2("/?fields=links");
-        final String body = get(url);
-        logger.log(Level.FINE, "****Received("+url+")****:\n" + body + "\n");
-        AbstractPullrequest.RepositoryLinks ret = null;
-        try {
-            final TypeFactory typeFactory = TypeFactory.defaultInstance();
-            final MapType responseType = typeFactory.constructMapType(
-                    HashMap.class,
-                    String.class,
-                    AbstractPullrequest.RepositoryLinks.class
-            );
-            final Map<String, AbstractPullrequest.RepositoryLinks> map = parse(body, responseType);
-            ret = map.get("links");
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "invalid response.", e);
-        }
-        return ret;
     }
 
     private List<AbstractPullrequest.Comment> cloudToAbstractComments(List<CloudPullrequest.Comment> comments) {
@@ -162,10 +131,13 @@ public class CloudApiClient extends ApiClient {
         return V2_API_BASE_URL + owner + "/" + repositoryName + path;
     }
 
-    private <T> List<T> getAllValues(String rootUrl, int pageLen, Class<T> cls) {
+    private <T> List<T> getAllValues(String rootUrl, int pageLen, String additionalFieldsSpec, Class<T> cls) {
         List<T> values = new ArrayList<T>();
         try {
             String url = rootUrl + "?pagelen=" + pageLen;
+            if (additionalFieldsSpec != null) {
+                url += "&fields=" + URLEncoder.encode(additionalFieldsSpec, StandardCharsets.UTF_8.toString());
+            }
             do {
                 final JavaType type = TypeFactory.defaultInstance().constructParametricType(AbstractPullrequest.Response.class, cls);
                 final String body = get(url);

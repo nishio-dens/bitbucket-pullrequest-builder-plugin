@@ -3,6 +3,7 @@ package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class AbstractPullrequest {
@@ -23,6 +24,39 @@ public abstract class AbstractPullrequest {
         String getOwnerName();
 
         String getRepositoryName();
+
+        RepositoryLinks getLinks();
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class RepositoryLinks {
+        private List<RepositoryLink> clone = new ArrayList<>();
+
+        public void setClone(List<RepositoryLink> clone) {
+            this.clone = clone;
+        }
+        public List<RepositoryLink> getClone() {
+            return clone;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class RepositoryLink {
+        private String name;
+        private String href;
+
+        public void setName(String name) {
+            this.name = name;
+        }
+        public void setHref(String href) {
+            this.href = href;
+        }
+        public String getName() {
+            return name;
+        }
+        public String getHref() {
+            return href;
+        }
     }
 
     public interface Branch {

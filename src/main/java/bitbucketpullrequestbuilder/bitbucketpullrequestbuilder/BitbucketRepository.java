@@ -154,6 +154,20 @@ public class BitbucketRepository {
             destinationCommitHash = pullRequest.getDestination().getCommit().getHash();
         }
 
+        final AbstractPullrequest.RepositoryLinks links = pullRequest.getSource().getRepository().getLinks();
+        String repoUri = null;
+
+        if(links != null) {
+            final List<AbstractPullrequest.RepositoryLink> cloneLinks = links.getClone();
+            if (cloneLinks != null) {
+                for (AbstractPullrequest.RepositoryLink cloneLink : cloneLinks) {
+                    if ( repoUri == null || "ssh".equals(cloneLink.getName()) ) { // prefer ssh URIs
+                        repoUri = cloneLink.getHref();
+                    }
+                }
+            }
+        }
+
         final BitbucketCause cause;
         if (this.trigger.isCloud()) {
             cause = new CloudBitbucketCause(
@@ -161,12 +175,13 @@ public class BitbucketRepository {
                 pullRequest.getDestination().getBranch().getName(),
                 pullRequest.getSource().getRepository().getOwnerName(),
                 pullRequest.getSource().getRepository().getRepositoryName(),
+                repoUri,
                 pullRequest.getId(),
                 pullRequest.getDestination().getRepository().getOwnerName(),
                 pullRequest.getDestination().getRepository().getRepositoryName(),
                 pullRequest.getTitle(),
                 pullRequest.getSource().getCommit().getHash(),
-                    destinationCommitHash,
+                destinationCommitHash,
                 pullRequest.getAuthor().getCombinedUsername()
             );
         } else {
@@ -176,6 +191,7 @@ public class BitbucketRepository {
                 pullRequest.getDestination().getBranch().getName(),
                 pullRequest.getSource().getRepository().getOwnerName(),
                 pullRequest.getSource().getRepository().getRepositoryName(),
+                repoUri,
                 pullRequest.getId(),
                 pullRequest.getDestination().getRepository().getOwnerName(),
                 pullRequest.getDestination().getRepository().getRepositoryName(),

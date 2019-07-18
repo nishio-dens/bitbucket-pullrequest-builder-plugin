@@ -61,6 +61,7 @@ public class CloudPullrequest extends AbstractPullrequest {
         private String name;
         private String ownerName;
         private String repositoryName;
+        private RepositoryLinks links;
 
         @JsonProperty("full_name")
         public String getFullName() {
@@ -81,11 +82,17 @@ public class CloudPullrequest extends AbstractPullrequest {
         public void setName(String name) {
             this.name = name;
         }
-        public String getOwnerName() {
+        public void setLinks(RepositoryLinks links) {
+            this.links = links;
+        }
+        @Override public String getOwnerName() {
             return ownerName;
         }
-        public String getRepositoryName() {
+        @Override public String getRepositoryName() {
             return repositoryName;
+        }
+        @Override public RepositoryLinks getLinks() {
+            return links;
         }
     }
 

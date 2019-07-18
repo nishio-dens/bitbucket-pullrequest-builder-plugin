@@ -7,6 +7,7 @@ public abstract class BitbucketCause extends Cause {
     private final String targetBranch;
     private final String repositoryOwner;
     private final String repositoryName;
+    private final String repositoryUri;
     private final String pullRequestId;
     private final String destinationRepositoryOwner;
     private final String destinationRepositoryName;
@@ -15,11 +16,15 @@ public abstract class BitbucketCause extends Cause {
     private final String destinationCommitHash;
     private final String pullRequestAuthor;
 
-    protected BitbucketCause(String sourceBranch, String targetBranch, String repositoryOwner, String repositoryName, String pullRequestId, String destinationRepositoryOwner, String destinationRepositoryName, String pullRequestTitle, String sourceCommitHash, String destinationCommitHash, String pullRequestAuthor) {
+    protected BitbucketCause(String sourceBranch, String targetBranch, String repositoryOwner, String repositoryName,
+                             String repositoryUri, String pullRequestId, String destinationRepositoryOwner,
+                             String destinationRepositoryName, String pullRequestTitle, String sourceCommitHash,
+                             String destinationCommitHash, String pullRequestAuthor) {
         this.sourceBranch = sourceBranch;
         this.targetBranch = targetBranch;
         this.repositoryOwner = repositoryOwner;
         this.repositoryName = repositoryName;
+        this.repositoryUri = repositoryUri;
         this.pullRequestId = pullRequestId;
         this.destinationRepositoryOwner = destinationRepositoryOwner;
         this.destinationRepositoryName = destinationRepositoryName;
@@ -43,6 +48,10 @@ public abstract class BitbucketCause extends Cause {
 
     public String getRepositoryName() {
         return repositoryName;
+    }
+
+    public String getRepositoryUri() {
+        return repositoryUri;
     }
 
     public String getPullRequestId() {

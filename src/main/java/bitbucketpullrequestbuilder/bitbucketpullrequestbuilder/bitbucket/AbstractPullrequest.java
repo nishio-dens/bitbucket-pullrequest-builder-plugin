@@ -28,21 +28,44 @@ public abstract class AbstractPullrequest {
         RepositoryLinks getLinks();
     }
 
+    /**
+     * Represents various URIs connected to the repository (e.g. git clone URIs, various BitBucket repository web
+     * URIs, etc.).
+     *
+     * Used to provide more specific target git revision information (git repository URI) when scheduling
+     * Jenkins builds.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class RepositoryLinks {
-        private List<RepositoryLink> clone = new ArrayList<>();
+        /**
+         * List of URIs that can be used for the <code>git clone</code> operation.
+         */
+        private List<RepositoryLink> cloneLinks = new ArrayList<>();
 
-        public void setClone(List<RepositoryLink> clone) {
-            this.clone = clone;
+        @JsonProperty("clone")
+        public void setCloneLinks(List<RepositoryLink> cloneLinks) {
+            this.cloneLinks = cloneLinks;
         }
-        public List<RepositoryLink> getClone() {
-            return clone;
+
+        @JsonProperty("clone")
+        public List<RepositoryLink> getCloneLinks() {
+            return cloneLinks;
         }
     }
 
+    /**
+     * Repository URI (e.g. a git clone URI, BitBucket repository web URI, etc.)
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class RepositoryLink {
+        /**
+         * Used to distinguish between various git clone URIs (e.g. https or ssh). Mostly unused otherwise.
+         */
         private String name;
+
+        /**
+         * Actual URI value.
+         */
         private String href;
 
         public void setName(String name) {

@@ -54,6 +54,7 @@ public class BitbucketRepository {
 
     public BitbucketRepository(String projectPath, BitbucketPullRequestsBuilder builder) {
         this.builder = builder;
+        this.trigger = this.builder.getTrigger();
     }
 
     public void init() {
@@ -69,8 +70,6 @@ public class BitbucketRepository {
     }
 
     public <T extends ApiClient.HttpClientFactory> void init(ApiClient client, T httpFactory) {
-        this.trigger = this.builder.getTrigger();
-
         if (client == null) {
             String username = trigger.getUsername();
             String password = trigger.getPassword();

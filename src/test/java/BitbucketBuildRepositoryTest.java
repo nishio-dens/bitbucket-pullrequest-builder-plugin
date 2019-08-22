@@ -123,6 +123,7 @@ public class BitbucketBuildRepositoryTest {
       "", "", "",
       true, 
       true,
+      true,
       false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER
     );
     
@@ -153,6 +154,7 @@ public class BitbucketBuildRepositoryTest {
       "", true,
       "", "", "",
       true, 
+      true,
       true,
       false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER
     );          
@@ -209,6 +211,7 @@ public class BitbucketBuildRepositoryTest {
       "jenkins", "Jenkins", "",
       true, 
       true,
+      true,
       false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER
     );
     
@@ -256,6 +259,7 @@ public class BitbucketBuildRepositoryTest {
       "jenkins-too-long-ci-key", "Jenkins", "",
       true, 
       true,
+      true,
       false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER
     );
     
@@ -287,6 +291,7 @@ public class BitbucketBuildRepositoryTest {
     EasyMock.expect(trigger.getBranchesFilter()).andReturn("");
     EasyMock.expect(trigger.isCloud()).andReturn(true);
     EasyMock.expect(trigger.getBitbucketServer()).andReturn(null);
+    EasyMock.expect(trigger.getBuildChronologically().andReturn(true));
     EasyMock.replay(trigger);
 
     // setup mock BitbucketPullRequestsBuilder

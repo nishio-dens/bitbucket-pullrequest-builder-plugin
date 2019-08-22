@@ -121,6 +121,10 @@ public class BitbucketRepository {
                 targetPullRequests.add(pullRequest);
             }
         }
+
+        if (trigger.getBuildChronologically()){
+            Collections.reverse(targetPullRequests);
+        }
         return targetPullRequests;
     }
 

@@ -59,6 +59,7 @@ pipeline {
         checkDestinationCommit:false,
         approveIfSuccess:false,
         cancelOutdatedJobs:true,
+        buildChronologically: true,
         commentTrigger:'')
     }
 }

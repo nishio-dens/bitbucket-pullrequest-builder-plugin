@@ -291,7 +291,6 @@ public class BitbucketBuildRepositoryTest {
     EasyMock.expect(trigger.getBranchesFilter()).andReturn("");
     EasyMock.expect(trigger.isCloud()).andReturn(true);
     EasyMock.expect(trigger.getBitbucketServer()).andReturn(null);
-    EasyMock.expect(trigger.getBuildChronologically().andReturn(true));
     EasyMock.replay(trigger);
 
     // setup mock BitbucketPullRequestsBuilder

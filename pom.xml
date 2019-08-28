@@ -6,6 +6,11 @@
     <version>2.11</version>
   </parent>
 
+  <properties>
+    <findbugs-maven-plugin.version>3.0.4</findbugs-maven-plugin.version>
+    <findbugs.failOnError>false</findbugs.failOnError>
+  </properties>
+
   <artifactId>bitbucket-pullrequest-builder</artifactId>
   <name>Bitbucket Pullrequest Builder Plugin</name>
   <version>1.5.0-SNAPSHOT</version>
@@ -41,6 +46,12 @@
   </repositories>
 
   <dependencies>
+    <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>annotations</artifactId>
+      <version>3.0.0</version>
+      <scope>provided</scope>
+    </dependency>
     <dependency>
       <groupId>org.apache.maven.wagon</groupId>
       <artifactId>wagon-http</artifactId>
@@ -83,6 +94,29 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <version>3.0.4</version>
+        <configuration>
+          <xmlOutput>true</xmlOutput>
+          <failOnError>${findbugs.failOnError}</failOnError>
+        </configuration>
+        <executions>
+          <execution>
+            <id>run-findbugs</id>
+            <phase>verify</phase> 
+            <goals>
+              <goal>check</goal> 
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 
   <pluginRepositories>
     <pluginRepository>

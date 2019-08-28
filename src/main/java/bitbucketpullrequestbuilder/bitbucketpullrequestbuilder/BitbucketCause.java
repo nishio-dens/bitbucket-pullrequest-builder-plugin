@@ -51,6 +51,14 @@ public abstract class BitbucketCause extends Cause {
     }
 
     public String getRepositoryUri() {
+        if (repositoryUri == null) {
+            // If nil, generate it from our repo name and owner (assume bitbucket cloud)
+            // Would be nice to go ahead and set repositoryUri too, for efficiency, but NOOOOOOO, it's gotta be final
+
+            // repositoryUri = String.format("git@bitbucket.org:%s/%s.git", repositoryOwner, repositoryName);
+            return String.format("git@bitbucket.org:%s/%s.git", repositoryOwner, repositoryName);
+        }
+
         return repositoryUri;
     }
 

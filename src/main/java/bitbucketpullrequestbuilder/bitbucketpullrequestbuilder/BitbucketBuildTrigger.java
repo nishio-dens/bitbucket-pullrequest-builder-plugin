@@ -250,10 +250,12 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
             if (repositoryUri != null) {
                 repoUri = new URIish(repositoryUri);
             } else {
-                logger.fine("No repository URI specified");
+                logger.log(Level.SEVERE, "Unable to create bitbucket url:{2}, checking out the pull request branch may fail. (n:{0} o:{1})",
+                    new Object[] { cause.getRepositoryName(), cause.getRepositoryOwner(), cause.getRepositoryUri() });
             }
         } catch (URISyntaxException e) {
-            logger.log(Level.FINE, "Repository URI error: {0}", e.getMessage());
+            logger.log(Level.SEVERE, "Unable to create URIish for bitbucket url:{2}, checking out the pull request branch may fail. (n:{0} o:{1}): {3}",
+                new Object[] { cause.getRepositoryName(), cause.getRepositoryOwner(), cause.getRepositoryUri(), e.getMessage()});
         }
 
         return scheduledJob.scheduleBuild2(
@@ -262,15 +264,6 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
             new ParametersAction(new ArrayList<ParameterValue>(values.values())),
             new RevisionParameterAction(cause.getSourceCommitHash(), repoUri)
         );
-    }
-
-    private URIish getBitbucketRepoUrl(String repoOwner, String repoName) {
-        try{
-            return new URIish(String.format("git@bitbucket.org:%s/%s.git", repoOwner, repoName));
-        } catch (URISyntaxException e) {
-            logger.log(Level.SEVERE, "Unable to create URIish for bitbucket url, checking out the pull request branch may fail.", e);
-            return null;
-        }
     }
 
     private void cancelPreviousJobsInQueueThatMatch(@Nonnull BitbucketCause bitbucketCause) {

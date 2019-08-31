@@ -112,8 +112,6 @@ public class BitbucketRepository {
     }
 
     public <T extends AbstractPullrequest> List<T> getTargetPullRequests() {
-        this.trigger = this.builder.getTrigger();
-        
         logger.fine("Fetch PullRequests.");
         List<T> pullRequests = client.getPullRequests();
         List<T> targetPullRequests = new ArrayList<>();

@@ -49,46 +49,46 @@ interface ICredentialsInterceptor {
 
 /**
  * Utility class for interceptor functionality
- * @param <T> 
+ * @param <T>
  */
-class HttpClientInterceptor<T extends ICredentialsInterceptor> extends HttpClient {  
+class HttpClientInterceptor<T extends ICredentialsInterceptor> extends HttpClient {
   private static final Logger logger = Logger.getLogger(HttpClientInterceptor.class.getName());
-  
+
   class CredentialsInterceptor<T extends ICredentialsInterceptor> extends HttpState {
     private final T interceptor;
     public CredentialsInterceptor(T interceptor) { this.interceptor = interceptor; }
-    
+
     @Override
-    public synchronized void setCredentials(AuthScope authscope, Credentials credentials) {      
+    public synchronized void setCredentials(AuthScope authscope, Credentials credentials) {
       logger.fine("Inject setCredentials");
       super.setCredentials(authscope, credentials);
       this.interceptor.assertCredentials(credentials);
       throw new AssertionError();
-    }    
-  }  
-  
+    }
+  }
+
   private final T interceptor;
   public HttpClientInterceptor(T interceptor) { this.interceptor = interceptor; }
-  
+
   @Override
-  public synchronized HttpState getState() { return new CredentialsInterceptor(this.interceptor); }  
+  public synchronized HttpState getState() { return new CredentialsInterceptor(this.interceptor); }
 }
 
 /**
  * Utility class for credentials assertion
- * Used with 
+ * Used with
  * @author maxvodo
  */
 class AssertCredentials implements ICredentialsInterceptor {
   private static final Logger logger = Logger.getLogger(AssertCredentials.class.getName());
-  
+
   private final Credentials expected;
   public AssertCredentials(Credentials expected) { this.expected = expected; }
 
   public void assertCredentials(Credentials actual) {
     logger.fine("Assert credential");
-    if (actual == null) assertTrue(this.expected == null); 
-                   else assertTrue(this.expected != null);        
+    if (actual == null) assertTrue(this.expected == null);
+                   else assertTrue(this.expected != null);
 
     if (actual instanceof UsernamePasswordCredentials) {
       UsernamePasswordCredentials actual_ = (UsernamePasswordCredentials)actual,
@@ -100,7 +100,7 @@ class AssertCredentials implements ICredentialsInterceptor {
         expected_.getUserName(), expected_.getPassword()
       });
     }
-  }      
+  }
 }
 
 /**
@@ -109,9 +109,9 @@ class AssertCredentials implements ICredentialsInterceptor {
 public class BitbucketBuildRepositoryTest {
 
   @Rule
-  public JenkinsRule jRule = new JenkinsRule();  
+  public JenkinsRule jRule = new JenkinsRule();
 
-  @Test  
+  @Test
   public void repositorySimpleUserPasswordTest() throws Exception {
     BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
       "", "","@hourly",
@@ -121,29 +121,29 @@ public class BitbucketBuildRepositoryTest {
       "", "",
       "", true,
       "", "", "",
-      true, 
+      true,
       true,
       true,
       false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER
     );
-    
-    BitbucketPullRequestsBuilder builder = EasyMock.createMock(BitbucketPullRequestsBuilder.class); 
+
+    BitbucketPullRequestsBuilder builder = EasyMock.createMock(BitbucketPullRequestsBuilder.class);
     EasyMock.expect(builder.getTrigger()).andReturn(trigger).anyTimes();
     EasyMock.replay(builder);
-    
+
     ApiClient.HttpClientFactory httpFactory = EasyMock.createNiceMock(ApiClient.HttpClientFactory.class);
     EasyMock.expect(httpFactory.getInstanceHttpClient()).andReturn(
       new HttpClientInterceptor(new AssertCredentials(new UsernamePasswordCredentials("foo", "bar")))
     ).anyTimes();
-    EasyMock.replay(httpFactory);            
-    
+    EasyMock.replay(httpFactory);
+
     BitbucketRepository repo = new BitbucketRepository("", builder);
     repo.init(httpFactory);
-    
+
     try { repo.postPullRequestApproval("prId"); } catch(Error e) { assertTrue(e instanceof AssertionError); }
   }
-  
-  @Test  
+
+  @Test
   public void repositoryCtorWithTriggerTest() throws Exception {
     BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
       "", "","@hourly",
@@ -153,35 +153,35 @@ public class BitbucketBuildRepositoryTest {
       "", "",
       "", true,
       "", "", "",
-      true, 
+      true,
       true,
       true,
       false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER
-    );          
-    
-    BitbucketPullRequestsBuilder builder = EasyMock.createMock(BitbucketPullRequestsBuilder.class); 
+    );
+
+    BitbucketPullRequestsBuilder builder = EasyMock.createMock(BitbucketPullRequestsBuilder.class);
     EasyMock.expect(builder.getTrigger()).andReturn(trigger).anyTimes();
     EasyMock.replay(builder);
-    
+
     CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
     assertNotNull(store);
     store.addCredentials(Domain.global(), new UsernamePasswordCredentialsImpl(
       CredentialsScope.GLOBAL, "JenkinsCID", "description", "username", "password"
     ));
-    
+
     ApiClient.HttpClientFactory httpFactory = EasyMock.createNiceMock(ApiClient.HttpClientFactory.class);
     EasyMock.expect(httpFactory.getInstanceHttpClient()).andReturn(
       new HttpClientInterceptor(new AssertCredentials(new UsernamePasswordCredentials("username", "password")))
     ).anyTimes();
-    EasyMock.replay(httpFactory);  
-    
+    EasyMock.replay(httpFactory);
+
     BitbucketRepository repo = new BitbucketRepository("", builder);
-    repo.init(httpFactory);        
-    
-    try { repo.postPullRequestApproval("prId"); } catch(Error e) { assertTrue(e instanceof AssertionError); }                
+    repo.init(httpFactory);
+
+    try { repo.postPullRequestApproval("prId"); } catch(Error e) { assertTrue(e instanceof AssertionError); }
   }
-  
-  class MD5HasherFunction implements Function<String, String> {       
+
+  class MD5HasherFunction implements Function<String, String> {
     protected final MessageDigest MD5;
     public MD5HasherFunction(MessageDigest md5) { this.MD5 = md5; }
     public String apply(String f) {
@@ -189,8 +189,8 @@ public class BitbucketBuildRepositoryTest {
       return null;
     }
   }
-  
-  class SHA1HasherFunction implements Function<String, String> {       
+
+  class SHA1HasherFunction implements Function<String, String> {
     protected final MessageDigest SHA1;
     public SHA1HasherFunction(MessageDigest sha1) { this.SHA1 = sha1; }
     public String apply(String f) {
@@ -198,8 +198,8 @@ public class BitbucketBuildRepositoryTest {
       return null;
     }
   }
-  
-  @Test  
+
+  @Test
   public void repositoryProjectIdTest() throws ANTLRException, NoSuchAlgorithmException, UnsupportedEncodingException {
     BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
       "", "","@hourly",
@@ -209,46 +209,46 @@ public class BitbucketBuildRepositoryTest {
       "", "",
       "", true,
       "jenkins", "Jenkins", "",
-      true, 
+      true,
       true,
       true,
       false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER
     );
-    
-    BitbucketPullRequestsBuilder builder = EasyMock.createMock(BitbucketPullRequestsBuilder.class); 
+
+    BitbucketPullRequestsBuilder builder = EasyMock.createMock(BitbucketPullRequestsBuilder.class);
     EasyMock.expect(builder.getTrigger()).andReturn(trigger).anyTimes();
-    
+
     final MessageDigest MD5 = MessageDigest.getInstance("MD5");
-    
-    String[] projectIds = new String[] { 
-      "one", 
+
+    String[] projectIds = new String[] {
+      "one",
       "Second project",
       "Project abstract 1.1",
-      "Good project, careated at " + (new java.util.Date()).toString(),      
-    };   
-    
+      "Good project, careated at " + (new java.util.Date()).toString(),
+    };
+
     Collection<String> hashedProjectIdsCollection = Collections2.transform(Arrays.asList(projectIds), new MD5HasherFunction(MD5));
     String[] hashedPojectIds = hashedProjectIdsCollection.toArray(new String[hashedProjectIdsCollection.size()]);
-    
+
     for(String projectId : hashedPojectIds) {
       EasyMock.expect(builder.getProjectId()).andReturn(projectId).times(1);
-    }        
+    }
     EasyMock.replay(builder);
-    
+
     BitbucketRepository repo = new BitbucketRepository("", builder);
-    repo.init();       
-    
+    repo.init();
+
     for(String projectId : projectIds) {
       String hashMD5 = new String(Hex.encodeHex(MD5.digest(projectId.getBytes("UTF-8"))));
       String buildStatusKey = repo.getClient().buildStatusKey(builder.getProjectId());
-      
+
       assertTrue(buildStatusKey.length() <= ApiClient.MAX_KEY_SIZE_BB_API);
       assertEquals(buildStatusKey, "jenkins-" + hashMD5);
     }
   }
-  
-  @Test  
-  public void triggerLongCIKeyTest() throws ANTLRException, NoSuchAlgorithmException {        
+
+  @Test
+  public void triggerLongCIKeyTest() throws ANTLRException, NoSuchAlgorithmException {
     BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
       "", "","@hourly",
       "JenkinsCID",
@@ -257,23 +257,23 @@ public class BitbucketBuildRepositoryTest {
       "", "",
       "", true,
       "jenkins-too-long-ci-key", "Jenkins", "",
-      true, 
+      true,
       true,
       true,
       false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER
     );
-    
+
     final MessageDigest MD5 = MessageDigest.getInstance("MD5");
     final MessageDigest SHA1 = MessageDigest.getInstance("SHA1");
-    
-    BitbucketPullRequestsBuilder builder = EasyMock.createMock(BitbucketPullRequestsBuilder.class); 
+
+    BitbucketPullRequestsBuilder builder = EasyMock.createMock(BitbucketPullRequestsBuilder.class);
     EasyMock.expect(builder.getTrigger()).andReturn(trigger).anyTimes();
     EasyMock.expect(builder.getProjectId()).andReturn((new MD5HasherFunction(MD5)).apply("projectId")).anyTimes();
-    EasyMock.replay(builder);       
-    
+    EasyMock.replay(builder);
+
     BitbucketRepository repo = new BitbucketRepository("", builder);
     repo.init();
-    
+
     String buildStatusKey = repo.getClient().buildStatusKey(builder.getProjectId());
     assertTrue(buildStatusKey.length() <= ApiClient.MAX_KEY_SIZE_BB_API);
     assertFalse(buildStatusKey.startsWith("jenkins-"));
@@ -290,6 +290,7 @@ public class BitbucketBuildRepositoryTest {
     EasyMock.expect(trigger.getBranchesFilterBySCMIncludes()).andReturn(false);
     EasyMock.expect(trigger.getBranchesFilter()).andReturn("");
     EasyMock.expect(trigger.isCloud()).andReturn(true);
+    EasyMock.expect(trigger.getBuildChronologically()).andReturn(true);
     EasyMock.expect(trigger.getBitbucketServer()).andReturn(null);
     EasyMock.replay(trigger);
 

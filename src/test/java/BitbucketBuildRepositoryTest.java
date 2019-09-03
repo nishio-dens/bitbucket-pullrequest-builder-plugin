@@ -123,6 +123,7 @@ public class BitbucketBuildRepositoryTest {
       "", "", "",
       true, 
       true,
+      true,
       false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER
     );
     
@@ -153,6 +154,7 @@ public class BitbucketBuildRepositoryTest {
       "", true,
       "", "", "",
       true, 
+      true,
       true,
       false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER
     );          
@@ -209,6 +211,7 @@ public class BitbucketBuildRepositoryTest {
       "jenkins", "Jenkins", "",
       true, 
       true,
+      true,
       false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER
     );
     
@@ -255,6 +258,7 @@ public class BitbucketBuildRepositoryTest {
       "", true,
       "jenkins-too-long-ci-key", "Jenkins", "",
       true, 
+      true,
       true,
       false, BitbucketRepository.DEFAULT_COMMENT_TRIGGER
     );

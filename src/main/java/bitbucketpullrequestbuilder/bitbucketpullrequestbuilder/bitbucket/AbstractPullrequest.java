@@ -3,6 +3,7 @@ package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class AbstractPullrequest {
@@ -23,6 +24,62 @@ public abstract class AbstractPullrequest {
         String getOwnerName();
 
         String getRepositoryName();
+
+        RepositoryLinks getLinks();
+    }
+
+    /**
+     * Represents various URIs connected to the repository (e.g. git clone URIs, various BitBucket repository web
+     * URIs, etc.).
+     *
+     * Used to provide more specific target git revision information (git repository URI) when scheduling
+     * Jenkins builds.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class RepositoryLinks {
+        /**
+         * List of URIs that can be used for the <code>git clone</code> operation.
+         */
+        private List<RepositoryLink> cloneLinks = new ArrayList<>();
+
+        @JsonProperty("clone")
+        public void setCloneLinks(List<RepositoryLink> cloneLinks) {
+            this.cloneLinks = cloneLinks;
+        }
+
+        @JsonProperty("clone")
+        public List<RepositoryLink> getCloneLinks() {
+            return cloneLinks;
+        }
+    }
+
+    /**
+     * Repository URI (e.g. a git clone URI, BitBucket repository web URI, etc.)
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class RepositoryLink {
+        /**
+         * Used to distinguish between various git clone URIs (e.g. https or ssh). Mostly unused otherwise.
+         */
+        private String name;
+
+        /**
+         * Actual URI value.
+         */
+        private String href;
+
+        public void setName(String name) {
+            this.name = name;
+        }
+        public void setHref(String href) {
+            this.href = href;
+        }
+        public String getName() {
+            return name;
+        }
+        public String getHref() {
+            return href;
+        }
     }
 
     public interface Branch {

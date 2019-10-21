@@ -75,6 +75,7 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
     private final boolean checkDestinationCommit;
     private final boolean approveIfSuccess;
     private final boolean cancelOutdatedJobs;
+    private final boolean buildChronologically;
     private final String commentTrigger;
 
     transient private BitbucketPullRequestsBuilder bitbucketPullRequestsBuilder;
@@ -99,6 +100,7 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
             boolean checkDestinationCommit,
             boolean approveIfSuccess,
             boolean cancelOutdatedJobs,
+            boolean buildChronologically,
             String commentTrigger
             ) throws ANTLRException {
         super(cron);
@@ -118,6 +120,7 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
         this.checkDestinationCommit = checkDestinationCommit;
         this.approveIfSuccess = approveIfSuccess;
         this.cancelOutdatedJobs = cancelOutdatedJobs;
+        this.buildChronologically = buildChronologically;
         this.commentTrigger = commentTrigger;
     }
 
@@ -185,6 +188,10 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
         return cancelOutdatedJobs;
     }
 
+    public boolean getBuildChronologically() {
+        return buildChronologically;
+    }
+
     /**
      * @return a phrase that when entered in a comment will trigger a new build
      */
@@ -237,21 +244,26 @@ public class BitbucketBuildTrigger extends Trigger<Job<?, ?>> {
             }
         };
 
+        URIish repoUri = null;
+        try {
+            final String repositoryUri = cause.getRepositoryUri();
+            if (repositoryUri != null) {
+                repoUri = new URIish(repositoryUri);
+            } else {
+                logger.log(Level.SEVERE, "Unable to create bitbucket url:{2}, checking out the pull request branch may fail. (n:{0} o:{1})",
+                    new Object[] { cause.getRepositoryName(), cause.getRepositoryOwner(), cause.getRepositoryUri() });
+            }
+        } catch (URISyntaxException e) {
+            logger.log(Level.SEVERE, "Unable to create URIish for bitbucket url:{2}, checking out the pull request branch may fail. (n:{0} o:{1}): {3}",
+                new Object[] { cause.getRepositoryName(), cause.getRepositoryOwner(), cause.getRepositoryUri(), e.getMessage()});
+        }
+
         return scheduledJob.scheduleBuild2(
             this.getInstance().getQuietPeriod(),
             new CauseAction(cause),
             new ParametersAction(new ArrayList<ParameterValue>(values.values())),
-            new RevisionParameterAction(cause.getSourceCommitHash())
+            new RevisionParameterAction(cause.getSourceCommitHash(), repoUri)
         );
-    }
-
-    private URIish getBitbucketRepoUrl(String repoOwner, String repoName) {
-        try{
-            return new URIish(String.format("git@bitbucket.org:%s/%s.git", repoOwner, repoName));
-        } catch (URISyntaxException e) {
-            logger.log(Level.SEVERE, "Unable to create URIish for bitbucket url, checking out the pull request branch may fail.", e);
-            return null;
-        }
     }
 
     private void cancelPreviousJobsInQueueThatMatch(@Nonnull BitbucketCause bitbucketCause) {

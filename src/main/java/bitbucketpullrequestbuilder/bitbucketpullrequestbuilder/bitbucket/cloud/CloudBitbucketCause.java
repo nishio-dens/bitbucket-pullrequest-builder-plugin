@@ -13,6 +13,7 @@ public class CloudBitbucketCause extends BitbucketCause {
                                String targetBranch,
                                String repositoryOwner,
                                String repositoryName,
+                               String repositoryUri,
                                String pullRequestId,
                                String destinationRepositoryOwner,
                                String destinationRepositoryName,
@@ -20,7 +21,9 @@ public class CloudBitbucketCause extends BitbucketCause {
                                String sourceCommitHash,
                                String destinationCommitHash,
                                String pullRequestAuthor) {
-        super(sourceBranch, targetBranch, repositoryOwner, repositoryName, pullRequestId, destinationRepositoryOwner, destinationRepositoryName, pullRequestTitle, sourceCommitHash, destinationCommitHash, pullRequestAuthor);
+        super(sourceBranch, targetBranch, repositoryOwner, repositoryName, repositoryUri, pullRequestId,
+                destinationRepositoryOwner, destinationRepositoryName, pullRequestTitle, sourceCommitHash,
+                destinationCommitHash, pullRequestAuthor);
     }
 
     @Override

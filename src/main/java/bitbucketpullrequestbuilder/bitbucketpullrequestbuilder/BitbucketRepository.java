@@ -54,6 +54,7 @@ public class BitbucketRepository {
 
     public BitbucketRepository(String projectPath, BitbucketPullRequestsBuilder builder) {
         this.builder = builder;
+        this.trigger = this.builder.getTrigger();
     }
 
     public void init() {
@@ -69,8 +70,6 @@ public class BitbucketRepository {
     }
 
     public <T extends ApiClient.HttpClientFactory> void init(ApiClient client, T httpFactory) {
-        this.trigger = this.builder.getTrigger();
-
         if (client == null) {
             String username = trigger.getUsername();
             String password = trigger.getPassword();
@@ -121,6 +120,10 @@ public class BitbucketRepository {
                 targetPullRequests.add(pullRequest);
             }
         }
+
+        if (trigger.getBuildChronologically()){
+            Collections.reverse(targetPullRequests);
+        }
         return targetPullRequests;
     }
 
@@ -154,6 +157,29 @@ public class BitbucketRepository {
             destinationCommitHash = pullRequest.getDestination().getCommit().getHash();
         }
 
+        final AbstractPullrequest.RepositoryLinks links = pullRequest.getSource().getRepository().getLinks();
+        String repoUri = null;
+
+        if(links != null) {
+            final List<AbstractPullrequest.RepositoryLink> cloneLinks = links.getCloneLinks();
+            if (cloneLinks != null) {
+                for (AbstractPullrequest.RepositoryLink cloneLink : cloneLinks) {
+                    logger.log(Level.FINE, "Processing repository link: name=''{0}'', href=''{1}''.",
+                            new Object[] {cloneLink.getName(), cloneLink.getHref()});
+                    if ( repoUri == null || "ssh".equals(cloneLink.getName()) ) { // prefer ssh URIs
+                        repoUri = cloneLink.getHref();
+                        logger.log(
+                                Level.FINE,
+                                "Selected a new link value for the repository URI: name=''{0}'', href=''{1}''.",
+                                new Object[] {cloneLink.getName(), cloneLink.getHref()}
+                        );
+                    }
+                }
+            }
+        }
+
+        logger.log(Level.INFO, "Using repository URI: ''{0}''.", new Object[] {repoUri});
+
         final BitbucketCause cause;
         if (this.trigger.isCloud()) {
             cause = new CloudBitbucketCause(
@@ -161,12 +187,13 @@ public class BitbucketRepository {
                 pullRequest.getDestination().getBranch().getName(),
                 pullRequest.getSource().getRepository().getOwnerName(),
                 pullRequest.getSource().getRepository().getRepositoryName(),
+                repoUri,
                 pullRequest.getId(),
                 pullRequest.getDestination().getRepository().getOwnerName(),
                 pullRequest.getDestination().getRepository().getRepositoryName(),
                 pullRequest.getTitle(),
                 pullRequest.getSource().getCommit().getHash(),
-                    destinationCommitHash,
+                destinationCommitHash,
                 pullRequest.getAuthor().getCombinedUsername()
             );
         } else {
@@ -176,6 +203,7 @@ public class BitbucketRepository {
                 pullRequest.getDestination().getBranch().getName(),
                 pullRequest.getSource().getRepository().getOwnerName(),
                 pullRequest.getSource().getRepository().getRepositoryName(),
+                repoUri,
                 pullRequest.getId(),
                 pullRequest.getDestination().getRepository().getOwnerName(),
                 pullRequest.getDestination().getRepository().getRepositoryName(),
@@ -260,7 +288,7 @@ public class BitbucketRepository {
         if(trigger != null && StringUtils.isNotBlank(trigger.getCommentTrigger())) {
             commentTrigger = trigger.getCommentTrigger();
         }
-      return content.toLowerCase().contains(commentTrigger);
+      return content.contains(commentTrigger);
     }
 
     private boolean isTTPCommentBuildTags(String content) {
@@ -288,8 +316,8 @@ public class BitbucketRepository {
     private boolean isBuildTarget(AbstractPullrequest pullRequest) {
         if (pullRequest.getState() != null && pullRequest.getState().equals("OPEN")) {
             if (isSkipBuild(pullRequest.getTitle()) || !isFilteredBuild(pullRequest)) {
-                logger.log(Level.FINE, "Skipping build for " + pullRequest.getTitle() + 
-                        ": skip:" + isSkipBuild(pullRequest.getTitle()) + " : isFilteredBuild: " + 
+                logger.log(Level.FINE, "Skipping build for " + pullRequest.getTitle() +
+                        ": skip:" + isSkipBuild(pullRequest.getTitle()) + " : isFilteredBuild: " +
                         isFilteredBuild(pullRequest));
                 return false;
             }

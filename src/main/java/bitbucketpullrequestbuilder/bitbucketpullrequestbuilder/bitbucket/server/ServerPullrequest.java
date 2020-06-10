@@ -288,9 +288,27 @@ public class ServerPullrequest extends AbstractPullrequest {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class CommitBuildState {
+        private String name;
+        private String description;
         private BuildState state;
         private String key;
         private String url;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
 
         public BuildState getState() {
             return state;

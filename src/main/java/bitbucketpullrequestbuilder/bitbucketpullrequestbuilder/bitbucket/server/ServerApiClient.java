@@ -68,8 +68,8 @@ public class ServerApiClient extends ApiClient {
         String computedKey = computeAPIKey(keyEx);
         ServerPullrequest.CommitBuildState commit = new ServerPullrequest.CommitBuildState();
 
-        // FIXME TODO WTF? Where do you put the comment?
-
+        commit.setName(this.name);
+        commit.setDescription(comment);
         commit.setKey(computedKey);
         commit.setState(state);
         commit.setUrl(buildUrl);

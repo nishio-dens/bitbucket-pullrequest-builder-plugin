@@ -45,7 +45,7 @@ pipeline {
     agent any
     triggers{
         bitbucketpr(projectPath:'',
-            bitbucketServer:'<BIT_BUCKET_URL>',
+            bitbucketServer:'<BITBUCKET_SERVER_URL>',
             cron: 'H/15 * * * *',
             credentialsId: '',
             username: '',

@@ -44,7 +44,8 @@ Jenkins pipeline
 pipeline {
     agent any
     triggers{
-        bitbucketpr(projectPath:'<BIT_BUCKET_PATH>',
+        bitbucketpr(projectPath:'',
+            bitbucketServer:'<BITBUCKET_SERVER_URL>',
             cron: 'H/15 * * * *',
             credentialsId: '',
             username: '',
@@ -64,6 +65,11 @@ pipeline {
     }
 }
 ```
+Note that the `projectPath` parameter does not need to be set if `bitbucketServer`, `repositoryOwner`, and
+`repositoryName` is set.  
+
+You can use jenkins credentials by setting environment variables in the `environment` section
+and referring to them like for example `"${env.BITBUCKET_CREDENTIALS_USR}"`.  
 
 After you set up your Jenkins pipeline, run the job for the first time manually (otherwise the trigger may not work!)
 
